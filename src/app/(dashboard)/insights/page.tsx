@@ -23,7 +23,8 @@ import { formatCurrency } from "@/lib/utils";
 export const metadata = { title: "AI Insights" };
 
 export default async function InsightsPage() {
-  const session = (await getServerSession(authOptions))!;
+  const session = await getServerSession(authOptions);
+  if (!session?.user) return null;
   const userId = session.user.id;
   const currency = session.user.currency || "USD";
   const { t } = getServerT();

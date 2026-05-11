@@ -2,16 +2,31 @@
 
 import * as React from "react";
 import { motion } from "framer-motion";
-import type { LucideIcon } from "lucide-react";
-import { ArrowDownRight, ArrowUpRight } from "lucide-react";
+import {
+  ArrowDownRight,
+  ArrowUpRight,
+  Wallet,
+  TrendingUp,
+  TrendingDown,
+  Sparkles,
+} from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn, formatCurrency } from "@/lib/utils";
+
+const iconMap = {
+  Wallet,
+  TrendingUp,
+  TrendingDown,
+  Sparkles,
+} as const;
+
+export type StatIconName = keyof typeof iconMap;
 
 type Props = {
   label: string;
   value: number;
   currency: string;
-  icon: LucideIcon;
+  icon: StatIconName;
   trend?: number | null;
   variant?: "default" | "primary" | "success" | "destructive" | "warning";
   hint?: string;
@@ -38,12 +53,13 @@ export function StatCard({
   label,
   value,
   currency,
-  icon: Icon,
+  icon,
   trend,
   variant = "default",
   hint,
   delay = 0,
 }: Props) {
+  const Icon = iconMap[icon];
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}

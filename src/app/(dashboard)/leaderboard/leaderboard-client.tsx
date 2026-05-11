@@ -2,18 +2,31 @@
 
 import * as React from "react";
 import { motion } from "framer-motion";
-import { Crown, Medal, Trophy } from "lucide-react";
+import { Crown, Medal, Trophy, Pencil, Trash2, Loader2 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn, formatCurrency, getInitials } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 
 type Row = {
   id: string;
   rank: number;
   name: string;
+  email: string;
   image?: string | null;
   income: number;
   expense: number;
@@ -29,13 +42,22 @@ type Response = {
   totalUsers: number;
 };
 
-export function LeaderboardClient({ currency }: { currency: string }) {
+export function LeaderboardClient({ 
+  currency, 
+  isAdmin 
+}: { 
+  currency: string;
+  isAdmin: boolean;
+}) {
   const [period, setPeriod] = React.useState<"week" | "month" | "all">("month");
   const [sort, setSort] = React.useState<"savings" | "income" | "expense">("savings");
   const [data, setData] = React.useState<Response | null>(null);
   const [loading, setLoading] = React.useState(true);
+  const [editingUser, setEditingUser] = React.useState<Row | null>(null);
+  const [deletingId, setDeletingId] = React.useState<string | null>(null);
+  const [submitting, setSubmitting] = React.useState(false);
 
-  React.useEffect(() => {
+  const refreshData = React.useCallback(() => {
     setLoading(true);
     fetch(`/api/leaderboard?period=${period}&sort=${sort}`)
       .then((r) => r.json())
@@ -43,8 +65,12 @@ export function LeaderboardClient({ currency }: { currency: string }) {
       .finally(() => setLoading(false));
   }, [period, sort]);
 
-  const top3 = data?.leaderboard.slice(0, 3) ?? [];
-  const rest = data?.leaderboard.slice(3) ?? [];
+  React.useEffect(() => {
+    refreshData();
+  }, [refreshData]);
+
+  const leaderboard = data?.leaderboard ?? [];
+  const top3 = leaderboard.slice(0, 3);
 
   return (
     <div className="space-y-6">
@@ -99,13 +125,13 @@ export function LeaderboardClient({ currency }: { currency: string }) {
                 <Skeleton key={i} className="h-10 w-full" />
               ))}
             </div>
-          ) : !rest.length ? (
+          ) : !leaderboard.length ? (
             <p className="px-6 text-sm text-muted-foreground">
-              You&apos;re in the top 3 already 🏆
+              No users tracked yet.
             </p>
           ) : (
             <ul className="divide-y">
-              {rest.map((row) => (
+              {leaderboard.map((row) => (
                 <li
                   key={row.id}
                   className={cn(
@@ -142,6 +168,26 @@ export function LeaderboardClient({ currency }: { currency: string }) {
                   >
                     {formatCurrency(row.savings, currency)}
                   </p>
+                  {isAdmin && !row.isCurrentUser && (
+                    <div className="flex items-center gap-1 ml-4">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-primary"
+                        onClick={() => setEditingUser(row)}
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        onClick={() => setDeletingId(row.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>
@@ -161,6 +207,118 @@ export function LeaderboardClient({ currency }: { currency: string }) {
           </CardContent>
         </Card>
       )}
+
+      {/* Edit User Dialog */}
+      <Dialog open={!!editingUser} onOpenChange={(open) => !open && setEditingUser(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+            <DialogDescription>
+              Update user details for {editingUser?.name}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Full Name</Label>
+              <Input
+                id="name"
+                defaultValue={editingUser?.name}
+                placeholder="John Doe"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address</Label>
+              <Input
+                id="email"
+                defaultValue={editingUser?.email}
+                placeholder="john@example.com"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="image">Profile Image URL</Label>
+              <Input
+                id="image"
+                defaultValue={editingUser?.image ?? ""}
+                placeholder="https://..."
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingUser(null)}>
+              Cancel
+            </Button>
+            <Button
+              disabled={submitting}
+              onClick={async () => {
+                if (!editingUser) return;
+                const name = (document.getElementById("name") as HTMLInputElement).value;
+                const email = (document.getElementById("email") as HTMLInputElement).value;
+                const image = (document.getElementById("image") as HTMLInputElement).value;
+                
+                setSubmitting(true);
+                try {
+                  const res = await fetch(`/api/admin/users/${editingUser.id}`, {
+                    method: "PATCH",
+                    body: JSON.stringify({ name, email, image }),
+                  });
+                  if (!res.ok) throw new Error("Failed to update");
+                  toast.success("User updated successfully");
+                  setEditingUser(null);
+                  refreshData();
+                } catch {
+                  toast.error("Failed to update user");
+                } finally {
+                  setSubmitting(false);
+                }
+              }}
+            >
+              {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <Dialog open={!!deletingId} onOpenChange={(open) => !open && setDeletingId(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete User</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this user? This action cannot be undone and will delete all their data.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeletingId(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={submitting}
+              onClick={async () => {
+                if (!deletingId) return;
+                setSubmitting(true);
+                try {
+                  const res = await fetch(`/api/admin/users/${deletingId}`, {
+                    method: "DELETE",
+                  });
+                  if (!res.ok) throw new Error("Failed to delete");
+                  toast.success("User deleted successfully");
+                  setDeletingId(null);
+                  refreshData();
+                } catch {
+                  toast.error("Failed to delete user");
+                } finally {
+                  setSubmitting(false);
+                }
+              }}
+            >
+              {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Delete User
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

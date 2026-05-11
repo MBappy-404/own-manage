@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Plus, Sparkles, Trophy, TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import { ArrowRight, Plus, Trophy } from "lucide-react";
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
@@ -30,7 +30,12 @@ import { Button } from "@/components/ui/button";
 export const metadata = { title: "Dashboard" };
 
 export default async function DashboardPage() {
-  const session = (await getServerSession(authOptions))!;
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user) {
+    return null; // Layout will handle redirect
+  }
+
   const userId = session.user.id;
   const currency = session.user.currency || "USD";
   const { t, locale } = getServerT();
@@ -89,7 +94,7 @@ export default async function DashboardPage() {
       amount: i.amount,
       label: i.source,
       category: i.category,
-      date: i.date,
+      date: i.date.toISOString(),
     })),
     ...expenses.slice(0, 4).map((e) => ({
       id: e.id,
@@ -97,7 +102,7 @@ export default async function DashboardPage() {
       amount: e.amount,
       label: e.merchant ?? e.notes ?? prettyEnum(e.category),
       category: e.category,
-      date: e.date,
+      date: e.date.toISOString(),
     })),
   ]
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -155,7 +160,7 @@ export default async function DashboardPage() {
           label={t("dashboard.totalBalance")}
           value={balance}
           currency={currency}
-          icon={Wallet}
+          icon="Wallet"
           variant="primary"
           delay={0}
         />
@@ -163,7 +168,7 @@ export default async function DashboardPage() {
           label={t("dashboard.incomeThisMonth")}
           value={monthInc}
           currency={currency}
-          icon={TrendingUp}
+          icon="TrendingUp"
           variant="success"
           trend={percentChange(monthInc, lastInc)}
           delay={0.05}
@@ -172,7 +177,7 @@ export default async function DashboardPage() {
           label={t("dashboard.expenseThisMonth")}
           value={monthExp}
           currency={currency}
-          icon={TrendingDown}
+          icon="TrendingDown"
           variant="destructive"
           trend={percentChange(monthExp, lastExp)}
           delay={0.1}
@@ -181,7 +186,7 @@ export default async function DashboardPage() {
           label={t("dashboard.savingsThisMonth")}
           value={monthSavings}
           currency={currency}
-          icon={Sparkles}
+          icon="Sparkles"
           variant={monthSavings >= 0 ? "success" : "warning"}
           hint={monthInc > 0 ? t("dashboard.savingsRate", { rate: Math.round((monthSavings / monthInc) * 100) }) : undefined}
           delay={0.15}

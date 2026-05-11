@@ -44,8 +44,14 @@ export function sumAmount<T extends { amount: number }>(items: T[]): number {
   return items.reduce((acc, x) => acc + (x.amount || 0), 0);
 }
 
-export function filterByInterval<T extends { date: Date | string }>(items: T[], start: Date, end: Date): T[] {
-  return items.filter((x) => isWithinInterval(new Date(x.date), { start, end }));
+export function filterByInterval<T extends { date: DateLike }>(
+  items: T[],
+  start: Date,
+  end: Date
+): T[] {
+  return items.filter((x) =>
+    isWithinInterval(new Date(x.date), { start, end })
+  );
 }
 
 export function buildDailySeries(items: { amount: number; date: DateLike }[], days = 30) {

@@ -94,11 +94,11 @@ export function ExpensesClient({
   const monthExp = filterByInterval(withDate, month.start, month.end);
   const weekExp = filterByInterval(withDate, week.start, week.end);
   const dayExp = filterByInterval(withDate, day.start, day.end);
-  const breakdown = categoryBreakdown(withDate as unknown as never);
+  const breakdown = categoryBreakdown(withDate);
   const heatmap = buildDailySeries(withDate, 90);
-  const dayOfWeek = spendingByDayOfWeek(withDate as unknown as never);
-  const peak = highestSpendingDay(withDate as unknown as never);
-  const low = lowestSpendingDay(withDate as unknown as never);
+  const dayOfWeek = spendingByDayOfWeek(withDate);
+  const peak = highestSpendingDay(withDate);
+  const low = lowestSpendingDay(withDate);
 
   const filtered = items.filter((i) => {
     const matchesCategory = filterCategory === "ALL" || i.category === filterCategory;
@@ -128,10 +128,10 @@ export function ExpensesClient({
       </header>
 
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-        <StatCard label="Total expense" value={total} currency={currency} icon={TrendingDown} variant="destructive" delay={0} />
-        <StatCard label="This month" value={sumAmount(monthExp)} currency={currency} icon={TrendingDown} variant="warning" delay={0.05} />
-        <StatCard label="This week" value={sumAmount(weekExp)} currency={currency} icon={TrendingDown} variant="warning" delay={0.1} />
-        <StatCard label="Today" value={sumAmount(dayExp)} currency={currency} icon={TrendingDown} variant="warning" delay={0.15} />
+        <StatCard label="Total expense" value={total} currency={currency} icon="TrendingDown" variant="destructive" delay={0} />
+        <StatCard label="This month" value={sumAmount(monthExp)} currency={currency} icon="TrendingDown" variant="warning" delay={0.05} />
+        <StatCard label="This week" value={sumAmount(weekExp)} currency={currency} icon="TrendingDown" variant="warning" delay={0.1} />
+        <StatCard label="Today" value={sumAmount(dayExp)} currency={currency} icon="TrendingDown" variant="warning" delay={0.15} />
       </section>
 
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">

@@ -110,10 +110,10 @@ export function IncomeClient({
       </header>
 
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-        <StatCard label={t("income.total")} value={total} currency={currency} icon={TrendingUp} variant="primary" delay={0} />
-        <StatCard label={t("common.thisMonth")} value={monthTotal} currency={currency} icon={TrendingUp} variant="success" delay={0.05} />
-        <StatCard label={t("common.thisWeek")} value={weekTotal} currency={currency} icon={TrendingUp} variant="success" delay={0.1} />
-        <StatCard label={t("income.today")} value={dayTotal} currency={currency} icon={TrendingUp} variant="success" delay={0.15} />
+        <StatCard label={t("income.total")} value={total} currency={currency} icon="TrendingUp" variant="primary" delay={0} />
+        <StatCard label={t("common.thisMonth")} value={monthTotal} currency={currency} icon="TrendingUp" variant="success" delay={0.05} />
+        <StatCard label={t("common.thisWeek")} value={weekTotal} currency={currency} icon="TrendingUp" variant="success" delay={0.1} />
+        <StatCard label={t("income.today")} value={dayTotal} currency={currency} icon="TrendingUp" variant="success" delay={0.15} />
       </section>
 
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">

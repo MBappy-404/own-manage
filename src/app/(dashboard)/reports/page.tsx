@@ -6,7 +6,8 @@ import { ReportsClient } from "./reports-client";
 export const metadata = { title: "Reports" };
 
 export default async function ReportsPage() {
-  const session = (await getServerSession(authOptions))!;
+  const session = await getServerSession(authOptions);
+  if (!session?.user) return null;
   const userId = session.user.id;
   const [incomes, expenses] = await Promise.all([
     prisma.income.findMany({ where: { userId }, orderBy: { date: "desc" } }),

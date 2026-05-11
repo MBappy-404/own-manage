@@ -6,7 +6,8 @@ import { SettingsClient } from "./settings-client";
 export const metadata = { title: "Settings" };
 
 export default async function SettingsPage() {
-  const session = (await getServerSession(authOptions))!;
+  const session = await getServerSession(authOptions);
+  if (!session?.user) return null;
   const profile = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: {

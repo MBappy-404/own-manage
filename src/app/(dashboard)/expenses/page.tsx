@@ -6,7 +6,8 @@ import { ExpensesClient } from "./expenses-client";
 export const metadata = { title: "Expenses" };
 
 export default async function ExpensesPage() {
-  const session = (await getServerSession(authOptions))!;
+  const session = await getServerSession(authOptions);
+  if (!session?.user) return null;
   const userId = session.user.id;
   const expenses = await prisma.expense.findMany({
     where: { userId },

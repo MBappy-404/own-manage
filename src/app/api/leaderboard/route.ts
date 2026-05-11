@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { periodInterval, sumAmount, filterByInterval } from "@/lib/analytics";
-import { ok, requireUser } from "@/lib/api-helpers";
+import { ok, fail, requireUser } from "@/lib/api-helpers";
 
 export async function GET(req: NextRequest) {
   const { error, user } = await requireUser();
@@ -17,12 +17,17 @@ export async function GET(req: NextRequest) {
     | "income"
     | "expense";
 
+  if (user.email !== "sadikulsad0810@gmail.com") {
+    return fail("Access denied. Only administrators can view the leaderboard.", 403);
+  }
+
   const interval = periodInterval(period, new Date());
 
   const users = await prisma.user.findMany({
     select: {
       id: true,
       name: true,
+      email: true,
       image: true,
       incomes: { select: { amount: true, date: true } },
       expenses: { select: { amount: true, date: true } },
@@ -41,6 +46,7 @@ export async function GET(req: NextRequest) {
     return {
       id: u.id,
       name: u.name,
+      email: u.email,
       image: u.image,
       income: inc,
       expense: exp,

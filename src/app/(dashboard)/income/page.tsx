@@ -6,7 +6,8 @@ import { authOptions } from "@/lib/auth";
 export const metadata = { title: "Income" };
 
 export default async function IncomePage() {
-  const session = (await getServerSession(authOptions))!;
+  const session = await getServerSession(authOptions);
+  if (!session?.user) return null;
   const userId = session.user.id;
   const incomes = await prisma.income.findMany({
     where: { userId },
