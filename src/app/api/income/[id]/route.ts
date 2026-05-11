@@ -1,0 +1,50 @@
+import type { NextRequest } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { incomeSchema } from "@/lib/validations";
+import { fail, ok, requireUser } from "@/lib/api-helpers";
+
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: { id: string } },
+) {
+  const { error, user } = await requireUser();
+  if (error) return error;
+
+  const body = await req.json();
+  const parsed = incomeSchema.partial().safeParse(body);
+  if (!parsed.success) return fail("Invalid input");
+
+  const existing = await prisma.income.findFirst({
+    where: { id: params.id, userId: user.id },
+  });
+  if (!existing) return fail("Not found", 404);
+
+  const income = await prisma.income.update({
+    where: { id: params.id },
+    data: {
+      ...(parsed.data.amount !== undefined && { amount: parsed.data.amount }),
+      ...(parsed.data.source !== undefined && { source: parsed.data.source }),
+      ...(parsed.data.category !== undefined && { category: parsed.data.category }),
+      ...(parsed.data.frequency !== undefined && { frequency: parsed.data.frequency }),
+      ...(parsed.data.date !== undefined && { date: parsed.data.date }),
+      ...(parsed.data.notes !== undefined && { notes: parsed.data.notes || null }),
+    },
+  });
+  return ok({ income });
+}
+
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: { id: string } },
+) {
+  const { error, user } = await requireUser();
+  if (error) return error;
+
+  const existing = await prisma.income.findFirst({
+    where: { id: params.id, userId: user.id },
+  });
+  if (!existing) return fail("Not found", 404);
+
+  await prisma.income.delete({ where: { id: params.id } });
+  return ok({ ok: true });
+}

@@ -1,0 +1,125 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 220 35% 98%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 252 86% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 8% 46%;
+
+    --accent: 192 91% 50%;
+    --accent-foreground: 222 47% 11%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 158 64% 42%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 36 100% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 252 86% 60%;
+
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 224 47% 5%;
+    --foreground: 210 40% 98%;
+
+    --card: 224 38% 8%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 224 38% 8%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 252 95% 70%;
+    --primary-foreground: 224 47% 5%;
+
+    --secondary: 224 32% 14%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 224 32% 14%;
+    --muted-foreground: 217 14% 65%;
+
+    --accent: 192 100% 55%;
+    --accent-foreground: 222 47% 11%;
+
+    --destructive: 0 70% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 158 64% 50%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 36 100% 60%;
+    --warning-foreground: 0 0% 100%;
+
+    --border: 224 30% 18%;
+    --input: 224 30% 18%;
+    --ring: 252 95% 70%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html,
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  body {
+    overscroll-behavior-y: contain;
+    background-image:
+      radial-gradient(at 0% 0%, hsl(var(--primary) / 0.12) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, hsl(var(--accent) / 0.10) 0px, transparent 50%);
+    background-attachment: fixed;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-card/80 backdrop-blur-xl border border-border/60 shadow-[0_10px_40px_-10px_rgba(15,23,42,0.15)];
+  }
+  .dark .glass-card {
+    @apply bg-card/60 border-border/40 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.6)];
+  }
+  .premium-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-br from-primary via-primary to-accent;
+  }
+  .stat-pill {
+    @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .safe-bottom {
+    padding-bottom: max(env(safe-area-inset-bottom), 1rem);
+  }
+  .safe-top {
+    padding-top: max(env(safe-area-inset-top), 0.5rem);
+  }
+}
