@@ -24,6 +24,7 @@ import {
   periodInterval,
   filterByInterval,
 } from "@/lib/analytics";
+import { smartFetch } from "@/lib/sync";
 import { IncomeExpenseArea } from "@/components/charts/area-chart";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { useI18n } from "@/lib/i18n/provider";
@@ -52,14 +53,14 @@ export function IncomeClient({
   const [search, setSearch] = React.useState("");
 
   async function refresh() {
-    const res = await fetch("/api/income");
+    const res = await smartFetch("/api/income", { method: "GET" });
     const data = await res.json();
     setItems(data.incomes);
   }
 
   async function handleDelete(id: string) {
     if (!confirm(t("income.confirmDelete"))) return;
-    const res = await fetch(`/api/income/${id}`, { method: "DELETE" });
+    const res = await smartFetch(`/api/income/${id}`, { method: "DELETE" });
     if (!res.ok) {
       toast.error("Could not delete");
       return;

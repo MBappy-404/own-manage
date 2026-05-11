@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { savingsGoalSchema, type SavingsGoalInput } from "@/lib/validations";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { smartFetch } from "@/lib/sync";
 
 type Goal = {
   id: string;
@@ -45,14 +46,14 @@ export function SavingsClient({
   const [editing, setEditing] = React.useState<Goal | null>(null);
 
   async function refresh() {
-    const res = await fetch("/api/savings-goals");
+    const res = await smartFetch("/api/savings-goals", { method: "GET" });
     const data = await res.json();
     setItems(data.goals);
   }
 
   async function handleDelete(id: string) {
     if (!confirm("Delete this goal?")) return;
-    const res = await fetch(`/api/savings-goals/${id}`, { method: "DELETE" });
+    const res = await smartFetch(`/api/savings-goals/${id}`, { method: "DELETE" });
     if (!res.ok) return toast.error("Could not delete");
     toast.success("Deleted");
     setItems((prev) => prev.filter((g) => g.id !== id));
@@ -233,7 +234,7 @@ function GoalDialog({
       ? `/api/savings-goals/${initial!.id}`
       : "/api/savings-goals";
     const method = editing ? "PUT" : "POST";
-    const res = await fetch(url, {
+    const res = await smartFetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(values),

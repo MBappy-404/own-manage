@@ -13,6 +13,7 @@ import {
   eachDayOfInterval,
   eachWeekOfInterval,
   eachMonthOfInterval,
+  eachYearOfInterval,
   format,
   isWithinInterval,
   differenceInDays,
@@ -59,7 +60,7 @@ export function buildDailySeries(items: { amount: number; date: DateLike }[], da
   const start = startOfDay(subDays(end, days - 1));
   const buckets = eachDayOfInterval({ start, end }).map((d) => ({
     date: format(d, "yyyy-MM-dd"),
-    label: format(d, "MMM d"),
+    label: format(d, "d MMM"),
     total: 0,
   }));
   for (const it of items) {
@@ -76,6 +77,25 @@ export function buildMonthlySeries(
 ) {
   const end = endOfMonth(new Date());
   const start = startOfMonth(subMonths(end, months - 1));
+  const buckets = eachMonthOfInterval({ start, end }).map((d) => ({
+    month: format(d, "yyyy-MM"),
+    label: format(d, "MMM"),
+    total: 0,
+  }));
+  for (const it of items) {
+    const key = format(new Date(it.date), "yyyy-MM");
+    const b = buckets.find((x) => x.month === key);
+    if (b) b.total += it.amount;
+  }
+  return buckets;
+}
+
+export function buildMonthlySeriesForYear(
+  items: { amount: number; date: DateLike }[],
+  year: number
+) {
+  const start = startOfYear(new Date(year, 0, 1));
+  const end = endOfYear(new Date(year, 11, 31));
   const buckets = eachMonthOfInterval({ start, end }).map((d) => ({
     month: format(d, "yyyy-MM"),
     label: format(d, "MMM"),
@@ -222,4 +242,23 @@ export function daysActive(items: { date: DateLike }[]): number {
   const min = Math.min(...dates);
   const max = Math.max(...dates);
   return Math.max(1, differenceInDays(new Date(max), new Date(min)) + 1);
+}
+
+export function buildYearlySeries(
+  items: { amount: number; date: DateLike }[],
+  years = 5,
+) {
+  const end = endOfYear(new Date());
+  const start = startOfYear(subDays(end, 365 * (years - 1)));
+  const buckets = eachYearOfInterval({ start, end }).map((d) => ({
+    year: format(d, "yyyy"),
+    label: format(d, "yyyy"),
+    total: 0,
+  }));
+  for (const it of items) {
+    const key = format(new Date(it.date), "yyyy");
+    const b = buckets.find((x) => x.year === key);
+    if (b) b.total += it.amount;
+  }
+  return buckets;
 }

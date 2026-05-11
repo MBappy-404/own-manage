@@ -37,6 +37,7 @@ import {
   spendingByDayOfWeek,
   sumAmount,
 } from "@/lib/analytics";
+import { smartFetch } from "@/lib/sync";
 
 type Expense = {
   id: string;
@@ -62,14 +63,14 @@ export function ExpensesClient({
   const [filterCategory, setFilterCategory] = React.useState<string>("ALL");
 
   async function refresh() {
-    const res = await fetch("/api/expense");
+    const res = await smartFetch("/api/expense", { method: "GET" });
     const data = await res.json();
     setItems(data.expenses);
   }
 
   async function handleDelete(id: string) {
     if (!confirm("Delete this expense?")) return;
-    const res = await fetch(`/api/expense/${id}`, { method: "DELETE" });
+    const res = await smartFetch(`/api/expense/${id}`, { method: "DELETE" });
     if (!res.ok) {
       toast.error("Could not delete");
       return;

@@ -9,6 +9,7 @@ import { format } from "date-fns";
 
 import { incomeSchema, type IncomeInput } from "@/lib/validations";
 import { INCOME_FREQUENCIES, prettyEnum } from "@/lib/utils";
+import { smartFetch } from "@/lib/sync";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -94,7 +95,7 @@ export function IncomeFormDialog({ open, onOpenChange, initial, onSaved }: Props
   async function onSubmit(values: IncomeInput) {
     const url = editing ? `/api/income/${initial!.id}` : "/api/income";
     const method = editing ? "PUT" : "POST";
-    const res = await fetch(url, {
+    const res = await smartFetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(values),

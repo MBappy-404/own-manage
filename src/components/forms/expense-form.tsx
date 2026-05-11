@@ -9,6 +9,7 @@ import { format } from "date-fns";
 
 import { expenseSchema, type ExpenseInput } from "@/lib/validations";
 import { EXPENSE_CATEGORIES, PAYMENT_METHODS, prettyEnum } from "@/lib/utils";
+import { smartFetch } from "@/lib/sync";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -92,7 +93,7 @@ export function ExpenseFormDialog({ open, onOpenChange, initial, onSaved }: Prop
   async function onSubmit(values: ExpenseInput) {
     const url = editing ? `/api/expense/${initial!.id}` : "/api/expense";
     const method = editing ? "PUT" : "POST";
-    const res = await fetch(url, {
+    const res = await smartFetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(values),

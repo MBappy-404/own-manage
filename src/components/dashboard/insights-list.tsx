@@ -81,8 +81,8 @@ export function InsightsList({ insights }: { insights: Insight[] }) {
               <Icon className="w-4 h-4" />
             </div>
             <div className="min-w-0">
-              <p className="font-semibold text-sm">{i.title}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="font-bold text-base leading-tight">{i.title}</p>
+              <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
                 {i.message}
               </p>
             </div>

@@ -32,15 +32,31 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   const { request } = event;
-  if (request.method !== "GET") return;
   const url = new URL(request.url);
 
-  // Skip API + auth requests entirely
+  // Stale-while-revalidate for API GET requests
+  if (url.pathname.startsWith("/api") && request.method === "GET") {
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        const fetchPromise = fetch(request)
+          .then((res) => {
+            const copy = res.clone();
+            caches.open(RUNTIME_CACHE).then((c) => c.put(request, copy));
+            return res;
+          })
+          .catch(() => null);
+        return cached || fetchPromise;
+      }),
+    );
+    return;
+  }
+
+  // Skip non-GET API requests
   if (url.pathname.startsWith("/api") || url.pathname.startsWith("/_next/data")) {
     return;
   }
 
-  // Network-first for navigation requests
+  // Network-first with fast timeout for navigation
   if (request.mode === "navigate") {
     event.respondWith(
       fetch(request)
@@ -58,15 +74,13 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(
     caches.match(request).then((cached) => {
       if (cached) return cached;
-      return fetch(request)
-        .then((res) => {
-          if (res && res.status === 200 && res.type === "basic") {
-            const copy = res.clone();
-            caches.open(RUNTIME_CACHE).then((c) => c.put(request, copy));
-          }
-          return res;
-        })
-        .catch(() => cached);
+      return fetch(request).then((res) => {
+        if (res && res.status === 200) {
+          const copy = res.clone();
+          caches.open(RUNTIME_CACHE).then((c) => c.put(request, copy));
+        }
+        return res;
+      });
     }),
   );
 });

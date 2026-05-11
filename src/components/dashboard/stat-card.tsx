@@ -65,16 +65,17 @@ export function StatCard({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.4, ease: "easeOut" }}
+      className="h-full"
     >
-      <Card className={cn("relative overflow-hidden border")}>
+      <Card className={cn("relative overflow-hidden border h-full")}>
         <div
           className={cn(
             "absolute inset-0 bg-gradient-to-br pointer-events-none",
             variantStyles[variant],
           )}
         />
-        <CardContent className="relative p-5">
-          <div className="flex items-start justify-between">
+        <CardContent className="relative p-5 flex flex-col h-full">
+          <div className="flex items-start justify-between flex-1">
             <div>
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                 {label}
@@ -95,10 +96,10 @@ export function StatCard({
               <Icon className="w-4 h-4" />
             </div>
           </div>
-          {typeof trend === "number" && (
+          {typeof trend === "number" ? (
             <div
               className={cn(
-                "stat-pill mt-3",
+                "stat-pill mt-3 w-fit",
                 trend >= 0
                   ? "bg-success/15 text-success"
                   : "bg-destructive/15 text-destructive",
@@ -111,6 +112,8 @@ export function StatCard({
               )}
               {Math.abs(trend).toFixed(1)}% vs last
             </div>
+          ) : (
+            <div className="h-[26px] mt-3" /> // Placeholder to keep height consistent
           )}
         </CardContent>
       </Card>
