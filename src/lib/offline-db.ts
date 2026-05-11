@@ -6,7 +6,7 @@ export type QueuedMutation = {
   id?: number;
   url: string;
   method: string;
-  body: any;
+  body: unknown;
   timestamp: number;
 };
 

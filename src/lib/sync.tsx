@@ -8,7 +8,6 @@ import { clearMutation, getQueuedMutations, enqueueMutation } from "./offline-db
  * Global provider to handle background synchronization of offline actions
  */
 export function SyncProvider({ children }: { children: React.ReactNode }) {
-  const [isOnline, setIsOnline] = React.useState(true);
 
   const sync = React.useCallback(async () => {
     const queue = await getQueuedMutations();
@@ -40,11 +39,9 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
 
   React.useEffect(() => {
     const handleOnline = () => {
-      setIsOnline(true);
       sync();
     };
     const handleOffline = () => {
-      setIsOnline(false);
       toast.warning("You are currently offline. Changes will be saved locally.");
     };
 

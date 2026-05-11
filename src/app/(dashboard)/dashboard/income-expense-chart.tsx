@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -11,7 +10,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
 import { IncomeExpenseArea } from "@/components/charts/area-chart";
 import { buildDailySeries, buildMonthlySeriesForYear } from "@/lib/analytics";
 
@@ -79,7 +77,7 @@ export function IncomeExpenseChart({
               </SelectContent>
             </Select>
           )}
-          <Tabs value={view} onValueChange={(v) => setView(v as any)}>
+          <Tabs value={view} onValueChange={(v) => setView(v as "daily" | "monthly")}>
             <TabsList className="h-8">
               <TabsTrigger value="daily" className="text-xs px-3">Daily</TabsTrigger>
               <TabsTrigger value="monthly" className="text-xs px-3">Monthly</TabsTrigger>

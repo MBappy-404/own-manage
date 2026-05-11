@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Plus, Sparkles, Trophy } from "lucide-react";
+import { ArrowRight, Sparkles, Trophy } from "lucide-react";
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
@@ -7,7 +7,6 @@ import { getServerT } from "@/lib/i18n/server";
 import { prisma } from "@/lib/prisma";
 import {
   bestEarningMonth,
-  buildMonthlySeries,
   categoryBreakdown,
   filterByInterval,
   financialHealthScore,
@@ -21,7 +20,6 @@ import { StatCard } from "@/components/dashboard/stat-card";
 import { HealthScoreCard } from "@/components/dashboard/health-score";
 import { InsightsList } from "@/components/dashboard/insights-list";
 import { RecentTransactions } from "@/components/dashboard/recent-transactions";
-import { IncomeExpenseArea } from "@/components/charts/area-chart";
 import { CategoryPie } from "@/components/charts/category-pie";
 import { SimpleBar } from "@/components/charts/bar-chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -83,8 +81,6 @@ export default async function DashboardPage() {
     expenseCount: monthExpenses.length,
   });
 
-  const monthlyIncomeSeries = buildMonthlySeries(incomes, 8);
-  const monthlyExpenseSeries = buildMonthlySeries(expenses, 8);
   const breakdown = categoryBreakdown(monthExpenses);
   const peakDay = highestSpendingDay(expenses);
   const bestMonth = bestEarningMonth(incomes);

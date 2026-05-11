@@ -2,11 +2,6 @@ import {
   subMonths, 
   startOfMonth, 
   endOfMonth, 
-  startOfWeek, 
-  endOfWeek, 
-  subWeeks, 
-  isWeekend, 
-  differenceInDays,
   getDate,
   getDaysInMonth
 } from "date-fns";
@@ -16,7 +11,6 @@ import {
   filterByInterval,
   sumAmount,
   categoryBreakdown,
-  spendingByDayOfWeek,
   highestSpendingDay,
 } from "./analytics";
 
@@ -48,12 +42,10 @@ export function generateInsights(args: {
   const expThis = filterByInterval(expenses, thisMonth.start, thisMonth.end);
   const expLast = filterByInterval(expenses, lastMonth.start, lastMonth.end);
   const incThis = filterByInterval(incomes, thisMonth.start, thisMonth.end);
-  const incLast = filterByInterval(incomes, lastMonth.start, lastMonth.end);
   
   const sumExpThis = sumAmount(expThis);
   const sumExpLast = sumAmount(expLast);
   const sumIncThis = sumAmount(incThis);
-  const sumIncLast = sumAmount(incLast);
 
   const savingsThis = sumIncThis - sumExpThis;
   const savingsRate = sumIncThis > 0 ? (savingsThis / sumIncThis) * 100 : 0;
@@ -90,7 +82,6 @@ export function generateInsights(args: {
   // 2. PREDICTIVE: Burn Rate & Daily Survival
   if (currentDayOfMonth > 2 && sumExpThis > 0) {
     const dailyAvg = sumExpThis / currentDayOfMonth;
-    const projectedExp = dailyAvg * daysInMonth;
     
     if (monthlyBudget && sumExpThis > monthlyBudget * 0.75) {
       const remainingBudget = Math.max(0, monthlyBudget - sumExpThis);
@@ -219,8 +210,4 @@ export function generateInsights(args: {
   }
 
   return insights.slice(0, 8);
-}
-
-function prettyCat(c: string) {
-  return c.charAt(0) + c.slice(1).toLowerCase();
 }
