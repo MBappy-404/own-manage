@@ -39,16 +39,32 @@ export async function POST(req: NextRequest) {
   const parsed = incomeSchema.safeParse(body);
   if (!parsed.success) return fail("Invalid input");
 
-  const income = await prisma.income.create({
-    data: {
-      userId: user.id,
-      amount: parsed.data.amount,
-      source: parsed.data.source,
-      category: parsed.data.category,
-      frequency: parsed.data.frequency,
-      date: parsed.data.date,
-      notes: parsed.data.notes || null,
-    },
+  const { amount, source, category, frequency, date, notes, financeAccountId } = parsed.data;
+
+  // Use a transaction to create the income and update account balance
+  const income = await prisma.$transaction(async (tx) => {
+    const newIncome = await tx.income.create({
+      data: {
+        userId: user.id,
+        amount,
+        source,
+        category,
+        frequency,
+        date,
+        notes: notes || null,
+        financeAccountId: financeAccountId || null,
+      },
+    });
+
+    if (financeAccountId) {
+      await tx.financeAccount.update({
+        where: { id: financeAccountId, userId: user.id },
+        data: { balance: { increment: amount } },
+      });
+    }
+
+    return newIncome;
   });
+
   return ok({ income }, { status: 201 });
 }

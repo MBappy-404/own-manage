@@ -85,6 +85,7 @@
   html,
   body {
     @apply bg-background text-foreground antialiased;
+    font-family: var(--font-sans), var(--font-bengali), sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
   body {
@@ -122,4 +123,22 @@
   .safe-top {
     padding-top: max(env(safe-area-inset-top), 0.5rem);
   }
+
+  .bg-card-radial {
+    background: radial-gradient(circle at top right, hsl(var(--primary) / 0.08), transparent 70%);
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+.animate-shake {
+  animation: shake 0.2s ease-in-out 0s 2;
+}
+
+.bg-premium-gradient {
+  @apply bg-gradient-to-br from-primary via-primary/90 to-accent;
 }

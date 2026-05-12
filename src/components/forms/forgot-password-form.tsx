@@ -10,10 +10,12 @@ import { forgotPasswordSchema } from "@/lib/validations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useI18n } from "@/lib/i18n/provider";
 
 type Values = { email: string };
 
 export function ForgotPasswordForm() {
+  const { t } = useI18n();
   const [resetUrl, setResetUrl] = React.useState<string | null>(null);
   const {
     register,
@@ -32,21 +34,21 @@ export function ForgotPasswordForm() {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      toast.error(data.error ?? "Something went wrong");
+      toast.error(data.error ?? t("settings.updateFailed"));
       return;
     }
     if (data.resetUrl) {
       setResetUrl(data.resetUrl);
-      toast.success("Reset link generated.");
+      toast.success(t("reports.exported"));
     } else {
-      toast.success("If that email exists, a reset link was sent.");
+      toast.success(t("reports.exported"));
     }
   }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="space-y-1.5">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email">{t("common.email")}</Label>
         <Input
           id="email"
           type="email"
@@ -66,7 +68,7 @@ export function ForgotPasswordForm() {
         disabled={isSubmitting}
       >
         {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-        Send reset link
+        {t("auth.sendResetLink")}
       </Button>
       {resetUrl && (
         <div className="rounded-lg border bg-muted/40 p-3 text-xs space-y-2">

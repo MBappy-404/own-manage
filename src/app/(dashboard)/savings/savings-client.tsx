@@ -22,8 +22,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { savingsGoalSchema, type SavingsGoalInput } from "@/lib/validations";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 import { smartFetch } from "@/lib/sync";
+import { useI18n } from "@/lib/i18n/provider";
+import { CurrencyValue } from "@/components/ui/currency-value";
+import { ConfirmModal } from "@/components/shared/confirm-modal";
 
 type Goal = {
   id: string;
@@ -41,9 +44,13 @@ export function SavingsClient({
   initial: Goal[];
   currency: string;
 }) {
+  const { t } = useI18n();
   const [items, setItems] = React.useState<Goal[]>(initial);
   const [open, setOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<Goal | null>(null);
+  const [confirmOpen, setConfirmOpen] = React.useState(false);
+  const [deletingId, setDeletingId] = React.useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = React.useState(false);
 
   async function refresh() {
     const res = await smartFetch("/api/savings-goals", { method: "GET" });
@@ -51,12 +58,24 @@ export function SavingsClient({
     setItems(data.goals);
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm("Delete this goal?")) return;
-    const res = await smartFetch(`/api/savings-goals/${id}`, { method: "DELETE" });
-    if (!res.ok) return toast.error("Could not delete");
-    toast.success("Deleted");
-    setItems((prev) => prev.filter((g) => g.id !== id));
+  function handleDelete(id: string) {
+    setDeletingId(id);
+    setConfirmOpen(true);
+  }
+
+  async function onConfirmDelete() {
+    if (!deletingId) return;
+    setIsDeleting(true);
+    try {
+      const res = await smartFetch(`/api/savings-goals/${deletingId}`, { method: "DELETE" });
+      if (!res.ok) return toast.error(t("settings.updateFailed"));
+      toast.success(t("income.deleted"));
+      setItems((prev) => prev.filter((g) => g.id !== deletingId));
+      setConfirmOpen(false);
+    } finally {
+      setIsDeleting(false);
+      setDeletingId(null);
+    }
   }
 
   return (
@@ -64,10 +83,10 @@ export function SavingsClient({
       <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-            Savings Goals
+            {t("savings.title")}
           </h1>
           <p className="text-sm text-muted-foreground">
-            Define what you&apos;re saving for and track progress visually.
+            {t("savings.subtitle")}
           </p>
         </div>
         <Button
@@ -77,7 +96,7 @@ export function SavingsClient({
             setOpen(true);
           }}
         >
-          <Plus className="w-4 h-4" /> New goal
+          <Plus className="w-4 h-4" /> {t("savings.newGoal")}
         </Button>
       </header>
 
@@ -85,9 +104,9 @@ export function SavingsClient({
         <Card>
           <CardContent className="p-8 text-center">
             <PiggyBank className="w-10 h-10 mx-auto text-primary mb-3" />
-            <p className="font-semibold">No goals yet</p>
+            <p className="font-semibold">{t("savings.empty")}</p>
             <p className="text-sm text-muted-foreground mb-4">
-              Start with something small — emergency fund, vacation, new gear.
+              {t("savings.emptyHint")}
             </p>
             <Button
               variant="premium"
@@ -96,7 +115,7 @@ export function SavingsClient({
                 setOpen(true);
               }}
             >
-              <Plus className="w-4 h-4" /> Create your first goal
+              <Plus className="w-4 h-4" /> {t("savings.createFirst")}
             </Button>
           </CardContent>
         </Card>
@@ -145,17 +164,17 @@ export function SavingsClient({
                     <div className="mt-4">
                       <div className="flex items-baseline justify-between mb-1.5">
                         <span className="text-2xl font-bold tabular-nums">
-                          {formatCurrency(g.currentAmount, currency)}
+                          <CurrencyValue value={g.currentAmount} currency={currency} />
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          / {formatCurrency(g.targetAmount, currency)}
+                          / <CurrencyValue value={g.targetAmount} currency={currency} />
                         </span>
                       </div>
                       <Progress value={pct} />
                       <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
-                        <span>{Math.round(pct)}% reached</span>
+                        <span>{t("savings.reached", { pct: Math.round(pct) })}</span>
                         {g.deadline && (
-                          <span>by {formatDate(g.deadline)}</span>
+                          <span>{t("savings.by", { date: formatDate(g.deadline) })}</span>
                         )}
                       </div>
                     </div>
@@ -173,6 +192,15 @@ export function SavingsClient({
         initial={editing}
         onSaved={refresh}
       />
+
+      <ConfirmModal
+        isOpen={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={onConfirmDelete}
+        title={t("savings.confirmDeleteTitle") || t("common.confirmDelete")}
+        description={t("savings.confirmDelete")}
+        isLoading={isDeleting}
+      />
     </div>
   );
 }
@@ -188,6 +216,7 @@ function GoalDialog({
   initial: Goal | null;
   onSaved: () => void;
 }) {
+  const { t } = useI18n();
   const editing = !!initial;
   const {
     register,
@@ -239,8 +268,8 @@ function GoalDialog({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(values),
     });
-    if (!res.ok) return toast.error("Could not save");
-    toast.success(editing ? "Goal updated" : "Goal created");
+    if (!res.ok) return toast.error(t("settings.updateFailed"));
+    toast.success(editing ? t("savings.updated") : t("savings.created"));
     onOpenChange(false);
     onSaved();
   }
@@ -249,19 +278,19 @@ function GoalDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{editing ? "Edit goal" : "New savings goal"}</DialogTitle>
+          <DialogTitle>{editing ? t("savings.edit") : t("savings.newGoalTitle")}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="title">Title</Label>
-            <Input id="title" placeholder="Emergency fund" {...register("title")} />
+            <Label htmlFor="title">{t("savings.titleField")}</Label>
+            <Input id="title" placeholder={t("savings.titlePlaceholder")} {...register("title")} />
             {errors.title && (
               <p className="text-xs text-destructive">{errors.title.message}</p>
             )}
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="targetAmount">Target</Label>
+              <Label htmlFor="targetAmount">{t("savings.target")}</Label>
               <Input
                 id="targetAmount"
                 type="number"
@@ -270,7 +299,7 @@ function GoalDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="currentAmount">Saved</Label>
+              <Label htmlFor="currentAmount">{t("savings.saved")}</Label>
               <Input
                 id="currentAmount"
                 type="number"
@@ -280,7 +309,7 @@ function GoalDialog({
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="deadline">Deadline (optional)</Label>
+            <Label htmlFor="deadline">{t("savings.deadline")}</Label>
             <Input
               id="deadline"
               type="date"
@@ -291,20 +320,20 @@ function GoalDialog({
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description">{t("savings.description")}</Label>
             <Textarea
               id="description"
               rows={2}
-              placeholder="Why this goal matters"
+              placeholder={t("savings.descPlaceholder")}
               {...register("description")}
             />
           </div>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button type="submit" variant="premium" disabled={isSubmitting}>
-              {editing ? "Save" : "Create"}
+              {editing ? t("common.save") : t("common.getStarted")}
             </Button>
           </DialogFooter>
         </form>

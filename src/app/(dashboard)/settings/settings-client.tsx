@@ -5,7 +5,7 @@ import { useTheme } from "next-themes";
 import { toast } from "sonner";
 import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Moon, Sparkles, Sun, Monitor } from "lucide-react";
+import { Loader2, Moon, Sparkles, Sun, Monitor, EyeOff, Eye } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,10 +28,17 @@ const CURRENCIES = ["USD", "EUR", "GBP", "INR", "BDT", "JPY", "CNY", "AUD", "CAD
 export function SettingsClient({
   initial,
 }: {
-  initial: { name: string; email: string; currency: string; monthlyBudget: number | null };
+  initial: {
+    name: string;
+    email: string;
+    currency: string;
+    monthlyBudget: number | null;
+    appPassword: string | null;
+  };
 }) {
   const { theme, setTheme } = useTheme();
   const { t, locale, setLocale } = useI18n();
+  const [showPin, setShowPin] = React.useState(false);
   const {
     register,
     handleSubmit,
@@ -44,6 +51,7 @@ export function SettingsClient({
       name: initial.name,
       currency: initial.currency,
       monthlyBudget: initial.monthlyBudget ?? undefined,
+      appPassword: initial.appPassword ?? "",
     },
   });
 
@@ -105,7 +113,7 @@ export function SettingsClient({
                     <SelectContent>
                       {CURRENCIES.map((c) => (
                         <SelectItem key={c} value={c}>
-                          {c}
+                          {c === "BDT" ? "BDT (৳)" : c}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -123,6 +131,31 @@ export function SettingsClient({
                     {...register("monthlyBudget")}
                   />
                 </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="appPassword">App Password / PIN</Label>
+                <div className="relative">
+                  <Input
+                    id="appPassword"
+                    type={showPin ? "text" : "password"}
+                    placeholder="Set a PIN to lock the app"
+                    className="pr-10"
+                    {...register("appPassword")}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPin(!showPin)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  This PIN will be required when you return to the app or open it on mobile.
+                </p>
+                {errors.appPassword && (
+                  <p className="text-xs text-destructive">{errors.appPassword.message}</p>
+                )}
               </div>
               <Button type="submit" variant="premium" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}

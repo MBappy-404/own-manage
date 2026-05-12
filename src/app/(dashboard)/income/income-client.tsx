@@ -15,7 +15,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { IncomeFormDialog } from "@/components/forms/income-form";
-import { formatCurrency, formatDate, prettyEnum } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
+import { CurrencyValue } from "@/components/ui/currency-value";
+import { ConfirmModal } from "@/components/shared/confirm-modal";
 import {
   sumAmount,
   buildMonthlySeries,
@@ -51,6 +53,9 @@ export function IncomeClient({
   const [open, setOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<IncomeItem | null>(null);
   const [search, setSearch] = React.useState("");
+  const [confirmOpen, setConfirmOpen] = React.useState(false);
+  const [deletingId, setDeletingId] = React.useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = React.useState(false);
 
   async function refresh() {
     const res = await smartFetch("/api/income", { method: "GET" });
@@ -58,15 +63,27 @@ export function IncomeClient({
     setItems(data.incomes);
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm(t("income.confirmDelete"))) return;
-    const res = await smartFetch(`/api/income/${id}`, { method: "DELETE" });
-    if (!res.ok) {
-      toast.error("Could not delete");
-      return;
+  function handleDelete(id: string) {
+    setDeletingId(id);
+    setConfirmOpen(true);
+  }
+
+  async function onConfirmDelete() {
+    if (!deletingId) return;
+    setIsDeleting(true);
+    try {
+      const res = await smartFetch(`/api/income/${deletingId}`, { method: "DELETE" });
+      if (!res.ok) {
+        toast.error(t("settings.updateFailed"));
+        return;
+      }
+      toast.success(t("income.deleted"));
+      setItems((prev) => prev.filter((i) => i.id !== deletingId));
+      setConfirmOpen(false);
+    } finally {
+      setIsDeleting(false);
+      setDeletingId(null);
     }
-    toast.success(t("income.deleted"));
-    setItems((prev) => prev.filter((i) => i.id !== id));
   }
 
   const incomesWithDate = React.useMemo(
@@ -137,7 +154,11 @@ export function IncomeClient({
                 {t("income.bestMonth")}
               </p>
               <p className="font-semibold">
-                {best ? `${formatCurrency(best.total, currency)} (${best.month})` : "—"}
+                {best ? (
+                  <>
+                    <CurrencyValue value={best.total} currency={currency} /> ({best.month})
+                  </>
+                ) : "—"}
               </p>
             </div>
             <div>
@@ -145,7 +166,11 @@ export function IncomeClient({
                 {t("income.peakDay")}
               </p>
               <p className="font-semibold">
-                {peak ? `${formatCurrency(peak.total, currency)} · ${peak.date}` : "—"}
+                {peak ? (
+                  <>
+                    <CurrencyValue value={peak.total} currency={currency} /> · {peak.date}
+                  </>
+                ) : "—"}
               </p>
             </div>
             <div>
@@ -195,11 +220,11 @@ export function IncomeClient({
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm font-medium truncate">{i.source}</p>
                         <Badge variant="secondary" className="text-[10px]">
-                          {i.category}
+                          {t(`incomeCategory.${i.category}`)}
                         </Badge>
                         {i.frequency !== "ONE_TIME" && (
                           <Badge variant="outline" className="text-[10px]">
-                            {prettyEnum(i.frequency)}
+                            {t(`frequency.${i.frequency}`)}
                           </Badge>
                         )}
                       </div>
@@ -209,7 +234,7 @@ export function IncomeClient({
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-semibold tabular-nums text-success">
-                        +{formatCurrency(i.amount, currency)}
+                        +<CurrencyValue value={i.amount} currency={currency} />
                       </p>
                     </div>
                     <div className="flex gap-1 ml-2">
@@ -244,6 +269,15 @@ export function IncomeClient({
         onOpenChange={setOpen}
         initial={editing}
         onSaved={refresh}
+      />
+
+      <ConfirmModal
+        isOpen={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={onConfirmDelete}
+        title={t("income.confirmDeleteTitle") || t("common.confirmDelete")}
+        description={t("income.confirmDelete")}
+        isLoading={isDeleting}
       />
     </div>
   );

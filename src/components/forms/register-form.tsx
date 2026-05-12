@@ -6,7 +6,7 @@ import { signIn } from "next-auth/react";
 import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 
 import { registerSchema, type RegisterInput } from "@/lib/validations";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,8 @@ import { useI18n } from "@/lib/i18n/provider";
 export function RegisterForm() {
   const router = useRouter();
   const { t } = useI18n();
+  const [showPassword, setShowPassword] = React.useState(false);
+
   const {
     register,
     handleSubmit,
@@ -35,7 +37,7 @@ export function RegisterForm() {
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      toast.error(data.error ?? "Failed to register");
+      toast.error(data.error ?? t("settings.updateFailed"));
       return;
     }
     const signed = await signIn("credentials", {
@@ -44,11 +46,11 @@ export function RegisterForm() {
       redirect: false,
     });
     if (signed?.error) {
-      toast.error("Account created — please sign in.");
+      toast.error(t("auth.invalidCreds"));
       router.push("/login");
       return;
     }
-    toast.success(`Welcome, ${values.name.split(" ")[0]}!`);
+    toast.success(t("auth.welcome"));
     router.push("/dashboard");
     router.refresh();
   }
@@ -82,13 +84,27 @@ export function RegisterForm() {
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="password">{t("common.password")}</Label>
-        <Input
-          id="password"
-          type="password"
-          autoComplete="new-password"
-          placeholder="At least 8 characters"
-          {...register("password")}
-        />
+        <div className="relative">
+          <Input
+            id="password"
+            type={showPassword ? "text" : "password"}
+            autoComplete="new-password"
+            placeholder="At least 8 characters"
+            className="pr-10"
+            {...register("password")}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {showPassword ? (
+              <EyeOff className="w-4 h-4" />
+            ) : (
+              <Eye className="w-4 h-4" />
+            )}
+          </button>
+        </div>
         {errors.password && (
           <p className="text-xs text-destructive">{errors.password.message}</p>
         )}

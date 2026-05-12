@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { expenseSchema } from "@/lib/validations";
 import { fail, ok, requireUser } from "@/lib/api-helpers";
-import type { ExpenseCategory, PaymentMethod, Prisma } from "@prisma/client";
+import type { PaymentMethod, Prisma } from "@prisma/client";
 
 export async function GET(req: NextRequest) {
   const { error, user } = await requireUser();
@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
       ...(to && { lte: new Date(to) }),
     };
   }
-  if (category) where.category = category as ExpenseCategory;
+  if (category) where.category = category;
   if (search) {
     where.OR = [
       { notes: { contains: search, mode: "insensitive" } },
@@ -47,16 +47,32 @@ export async function POST(req: NextRequest) {
   const parsed = expenseSchema.safeParse(body);
   if (!parsed.success) return fail("Invalid input");
 
-  const expense = await prisma.expense.create({
-    data: {
-      userId: user.id,
-      amount: parsed.data.amount,
-      category: parsed.data.category as ExpenseCategory,
-      paymentMethod: parsed.data.paymentMethod as PaymentMethod,
-      date: parsed.data.date,
-      notes: parsed.data.notes || null,
-      merchant: parsed.data.merchant || null,
-    },
+  const { amount, category, paymentMethod, date, notes, merchant, financeAccountId } = parsed.data;
+
+  // Use a transaction to create the expense and update account balance
+  const expense = await prisma.$transaction(async (tx) => {
+    const newExpense = await tx.expense.create({
+      data: {
+        userId: user.id,
+        amount,
+        category,
+        paymentMethod: paymentMethod as PaymentMethod,
+        date,
+        notes: notes || null,
+        merchant: merchant || null,
+        financeAccountId: financeAccountId || null,
+      },
+    });
+
+    if (financeAccountId) {
+      await tx.financeAccount.update({
+        where: { id: financeAccountId, userId: user.id },
+        data: { balance: { decrement: amount } },
+      });
+    }
+
+    return newExpense;
   });
+
   return ok({ expense }, { status: 201 });
 }

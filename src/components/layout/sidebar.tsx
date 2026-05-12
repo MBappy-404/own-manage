@@ -14,16 +14,22 @@ import {
   Wallet,
   TrendingDown,
   TrendingUp,
+  CreditCard,
+  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n/provider";
+
+import { useSession } from "next-auth/react";
 
 const navItems = [
   { href: "/dashboard", labelKey: "nav.dashboard", icon: LayoutDashboard },
   { href: "/income", labelKey: "nav.income", icon: TrendingUp },
   { href: "/expenses", labelKey: "nav.expenses", icon: TrendingDown },
+  { href: "/accounts", labelKey: "nav.accounts", icon: CreditCard },
+  { href: "/debts", labelKey: "nav.debts", icon: Users },
   { href: "/insights", labelKey: "nav.insights", icon: Brain },
-  { href: "/leaderboard", labelKey: "nav.leaderboard", icon: Trophy },
+  { href: "/leaderboard", labelKey: "nav.leaderboard", icon: Trophy, adminOnly: true },
   { href: "/savings", labelKey: "nav.savings", icon: PiggyBank },
   { href: "/reports", labelKey: "nav.reports", icon: FileText },
   { href: "/settings", labelKey: "nav.settings", icon: Settings },
@@ -32,6 +38,14 @@ const navItems = [
 export function Sidebar() {
   const pathname = usePathname();
   const { t } = useI18n();
+  const { data: session } = useSession();
+
+  const isAdmin = session?.user?.email === "sadikulsad0810@gmail.com";
+
+  const filteredNavItems = navItems.filter((item) => {
+    if (item.adminOnly && !isAdmin) return false;
+    return true;
+  });
 
   return (
     <aside className="hidden md:flex w-64 shrink-0 flex-col border-r bg-card/40 backdrop-blur-xl sticky top-0 h-svh">
@@ -42,12 +56,12 @@ export function Sidebar() {
         <div>
           <p className="font-bold tracking-tight">OwnManage</p>
           <p className="text-[10px] text-muted-foreground -mt-0.5">
-            Personal Finance
+            {t("common.tagline")}
           </p>
         </div>
       </Link>
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-        {navItems.map((item) => {
+        {filteredNavItems.map((item) => {
           const active =
             pathname === item.href ||
             (item.href !== "/dashboard" && pathname.startsWith(item.href));
@@ -58,7 +72,7 @@ export function Sidebar() {
               className={cn(
                 "relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
                 active
-                  ? "text-foreground"
+                   ? "text-foreground"
                   : "text-muted-foreground hover:text-foreground hover:bg-accent/40",
               )}
             >
@@ -77,9 +91,9 @@ export function Sidebar() {
       </nav>
       <div className="m-3 rounded-xl border bg-premium-gradient/10 p-3">
         <Sparkles className="w-4 h-4 text-primary mb-1" />
-        <p className="text-xs font-medium">Pro tip</p>
+        <p className="text-xs font-medium">{t("settings.tip").split(".")[0]}</p>
         <p className="text-[11px] text-muted-foreground">
-          Log a transaction daily for richer AI insights.
+          {t("dashboard.smartInsightsSubtitle")}
         </p>
       </div>
     </aside>

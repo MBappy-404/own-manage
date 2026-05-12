@@ -1,4 +1,5 @@
 import Link from "next/link";
+import * as React from "react";
 import { ArrowRight, Sparkles, Trophy } from "lucide-react";
 import { getServerSession } from "next-auth";
 
@@ -15,7 +16,7 @@ import {
   sumAmount,
 } from "@/lib/analytics";
 import { generateInsights } from "@/lib/insights";
-import { formatCurrency, formatDate, prettyEnum, percentChange } from "@/lib/utils";
+import { formatCurrency, formatDate, percentChange } from "@/lib/utils";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { HealthScoreCard } from "@/components/dashboard/health-score";
 import { InsightsList } from "@/components/dashboard/insights-list";
@@ -26,6 +27,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DashboardHeader } from "./dashboard-header";
 import { IncomeExpenseChart } from "./income-expense-chart";
+import { CurrencyValue } from "@/components/ui/currency-value";
 
 export const metadata = { title: "Dashboard" };
 
@@ -40,7 +42,7 @@ export default async function DashboardPage() {
   const currency = session.user.currency || "USD";
   const { t, locale } = getServerT();
 
-  const [incomes, expenses, user] = await Promise.all([
+  const [incomes, expenses, user, financeAccounts] = await Promise.all([
     prisma.income.findMany({
       where: { userId },
       orderBy: { date: "desc" },
@@ -52,6 +54,10 @@ export default async function DashboardPage() {
     prisma.user.findUnique({
       where: { id: userId },
       select: { name: true, monthlyBudget: true },
+    }),
+    prisma.financeAccount.findMany({
+      where: { userId },
+      orderBy: { balance: "desc" },
     }),
   ]);
 
@@ -67,6 +73,10 @@ export default async function DashboardPage() {
   const totalIncome = sumAmount(incomes);
   const totalExpense = sumAmount(expenses);
   const balance = totalIncome - totalExpense;
+  const totalWalletBalance = financeAccounts.reduce((acc, curr) => acc + curr.balance, 0);
+  const totalUSD = financeAccounts
+    .filter((acc) => ["USD", "USDT"].includes(acc.currency.toUpperCase()))
+    .reduce((acc, curr) => acc + curr.balance, 0);
 
   const monthInc = sumAmount(monthIncomes);
   const monthExp = sumAmount(monthExpenses);
@@ -98,7 +108,7 @@ export default async function DashboardPage() {
       id: e.id,
       type: "EXPENSE" as const,
       amount: e.amount,
-      label: e.merchant ?? e.notes ?? prettyEnum(e.category),
+      label: e.merchant ?? e.notes ?? t(`category.${e.category}`),
       category: e.category,
       date: e.date.toISOString(),
     })),
@@ -110,6 +120,7 @@ export default async function DashboardPage() {
     incomes,
     expenses,
     monthlyBudget: user?.monthlyBudget,
+    t,
   });
 
   const dayOfWeekBars = (() => {
@@ -148,15 +159,25 @@ export default async function DashboardPage() {
         />
       </header>
 
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+      <section className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
         <StatCard
           label={t("dashboard.totalBalance")}
-          value={balance}
+          value={totalWalletBalance > 0 ? totalWalletBalance : balance}
           currency={currency}
           icon="Wallet"
           variant="primary"
           delay={0}
         />
+        {totalUSD > 0 && (
+          <StatCard
+            label="Total USD"
+            value={totalUSD}
+            currency="USD"
+            icon="DollarSign"
+            variant="premium"
+            delay={0.05}
+          />
+        )}
         <StatCard
           label={t("dashboard.incomeThisMonth")}
           value={monthInc}
@@ -164,7 +185,7 @@ export default async function DashboardPage() {
           icon="TrendingUp"
           variant="success"
           trend={percentChange(monthInc, lastInc)}
-          delay={0.05}
+          delay={0.1}
         />
         <StatCard
           label={t("dashboard.expenseThisMonth")}
@@ -173,7 +194,7 @@ export default async function DashboardPage() {
           icon="TrendingDown"
           variant="destructive"
           trend={percentChange(monthExp, lastExp)}
-          delay={0.1}
+          delay={0.15}
         />
         <StatCard
           label={t("dashboard.savingsThisMonth")}
@@ -182,9 +203,46 @@ export default async function DashboardPage() {
           icon="Sparkles"
           variant={monthSavings >= 0 ? "success" : "warning"}
           hint={monthInc > 0 ? t("dashboard.savingsRate", { rate: Math.round((monthSavings / monthInc) * 100) }) : undefined}
-          delay={0.15}
+          delay={0.2}
         />
       </section>
+
+      {financeAccounts.length > 0 && (
+        <section className="animate-in fade-in slide-in-from-bottom-3 duration-500 delay-200">
+          <Card className="border-none bg-gradient-to-br from-primary/10 via-background to-background shadow-sm overflow-hidden">
+            <CardHeader className="pb-3 flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-lg md:text-xl font-bold">
+                  {t("accounts.title")}
+                </CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  Your current balances across all wallets
+                </p>
+              </div>
+              <Button asChild variant="ghost" size="sm">
+                <Link href="/accounts">{t("common.viewAll")} <ArrowRight className="w-3.5 h-3.5 ml-1" /></Link>
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-3">
+                {financeAccounts.map((acc) => (
+                  <div
+                    key={acc.id}
+                    className="flex flex-col p-3 rounded-2xl bg-background/50 border border-border/50 min-w-[140px] flex-1 hover:bg-background/80 transition-colors group"
+                  >
+                    <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider group-hover:text-primary transition-colors">
+                      {acc.name}
+                    </span>
+                    <span className="text-lg font-bold mt-1 tracking-tight">
+                      <CurrencyValue value={acc.balance} currency={acc.currency} />
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </section>
+      )}
 
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <IncomeExpenseChart
@@ -206,9 +264,9 @@ export default async function DashboardPage() {
             <div className="mt-3 space-y-1.5">
               {breakdown.slice(0, 4).map((c) => (
                 <div key={c.category} className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">{prettyEnum(c.category)}</span>
+                  <span className="text-muted-foreground">{t(`category.${c.category}`)}</span>
                   <span className="font-medium tabular-nums">
-                    {formatCurrency(c.total, currency)}
+                    {formatCurrency(c.total, currency, locale)}
                   </span>
                 </div>
               ))}
@@ -236,28 +294,30 @@ export default async function DashboardPage() {
           <CardContent className="pt-2 space-y-3">
             <Highlight
               label={t("dashboard.highestSpendDay")}
-              primary={peakDay ? formatCurrency(peakDay.total, currency) : "—"}
+              primary={peakDay ? <CurrencyValue value={peakDay.total} currency={currency} /> : "—"}
               secondary={peakDay ? formatDate(peakDay.date) : "—"}
             />
             <Highlight
               label={t("dashboard.bestEarningMonth")}
-              primary={bestMonth ? formatCurrency(bestMonth.total, currency) : "—"}
+              primary={bestMonth ? <CurrencyValue value={bestMonth.total} currency={currency} /> : "—"}
               secondary={bestMonth?.month ?? "—"}
             />
             <Highlight
               label={t("dashboard.lifetimeIncome")}
-              primary={formatCurrency(totalIncome, currency)}
+              primary={<CurrencyValue value={totalIncome} currency={currency} />}
             />
             <Highlight
               label={t("dashboard.lifetimeExpense")}
-              primary={formatCurrency(totalExpense, currency)}
+              primary={<CurrencyValue value={totalExpense} currency={currency} />}
             />
-            <Button asChild variant="ghost" size="sm" className="w-full mt-1">
-              <Link href="/leaderboard">
-                <Trophy className="w-4 h-4" /> {t("dashboard.openLeaderboard")}
-                <ArrowRight className="w-3.5 h-3.5 ml-auto" />
-              </Link>
-            </Button>
+            {session.user.email === "sadikulsad0810@gmail.com" && (
+              <Button asChild variant="ghost" size="sm" className="w-full mt-1">
+                <Link href="/leaderboard">
+                  <Trophy className="w-4 h-4" /> {t("dashboard.openLeaderboard")}
+                  <ArrowRight className="w-3.5 h-3.5 ml-auto" />
+                </Link>
+              </Button>
+            )}
           </CardContent>
         </Card>
       </section>
@@ -296,7 +356,7 @@ function Highlight({
   secondary,
 }: {
   label: string;
-  primary: string;
+  primary: React.ReactNode;
   secondary?: string;
 }) {
   return (
@@ -304,7 +364,7 @@ function Highlight({
       <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">
         {label}
       </p>
-      <p className="font-semibold mt-0.5">{primary}</p>
+      <div className="font-semibold mt-0.5">{primary}</div>
       {secondary && <p className="text-xs text-muted-foreground">{secondary}</p>}
     </div>
   );

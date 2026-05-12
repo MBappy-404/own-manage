@@ -26,7 +26,9 @@ import { StatCard } from "@/components/dashboard/stat-card";
 import { CategoryPie } from "@/components/charts/category-pie";
 import { SimpleBar } from "@/components/charts/bar-chart";
 import { ExpenseHeatmap } from "@/components/charts/heatmap";
-import { EXPENSE_CATEGORIES, formatCurrency, formatDate, getCategoryColor, prettyEnum } from "@/lib/utils";
+import { EXPENSE_CATEGORIES, formatDate, getCategoryColor } from "@/lib/utils";
+import { CurrencyValue } from "@/components/ui/currency-value";
+import { ConfirmModal } from "@/components/shared/confirm-modal";
 import {
   buildDailySeries,
   categoryBreakdown,
@@ -38,6 +40,7 @@ import {
   sumAmount,
 } from "@/lib/analytics";
 import { smartFetch } from "@/lib/sync";
+import { useI18n } from "@/lib/i18n/provider";
 
 type Expense = {
   id: string;
@@ -56,11 +59,15 @@ export function ExpensesClient({
   initial: Expense[];
   currency: string;
 }) {
+  const { t } = useI18n();
   const [items, setItems] = React.useState<Expense[]>(initial);
   const [open, setOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<Expense | null>(null);
   const [search, setSearch] = React.useState("");
   const [filterCategory, setFilterCategory] = React.useState<string>("ALL");
+  const [confirmOpen, setConfirmOpen] = React.useState(false);
+  const [deletingId, setDeletingId] = React.useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = React.useState(false);
 
   async function refresh() {
     const res = await smartFetch("/api/expense", { method: "GET" });
@@ -68,15 +75,27 @@ export function ExpensesClient({
     setItems(data.expenses);
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm("Delete this expense?")) return;
-    const res = await smartFetch(`/api/expense/${id}`, { method: "DELETE" });
-    if (!res.ok) {
-      toast.error("Could not delete");
-      return;
+  function handleDelete(id: string) {
+    setDeletingId(id);
+    setConfirmOpen(true);
+  }
+
+  async function onConfirmDelete() {
+    if (!deletingId) return;
+    setIsDeleting(true);
+    try {
+      const res = await smartFetch(`/api/expense/${deletingId}`, { method: "DELETE" });
+      if (!res.ok) {
+        toast.error(t("settings.updateFailed"));
+        return;
+      }
+      toast.success(t("expense.deleted"));
+      setItems((prev) => prev.filter((i) => i.id !== deletingId));
+      setConfirmOpen(false);
+    } finally {
+      setIsDeleting(false);
+      setDeletingId(null);
     }
-    toast.success("Deleted");
-    setItems((prev) => prev.filter((i) => i.id !== id));
   }
 
   const withDate = React.useMemo(
@@ -112,9 +131,9 @@ export function ExpensesClient({
     <div className="space-y-6">
       <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Expenses</h1>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t("expense.title")}</h1>
           <p className="text-sm text-muted-foreground">
-            Categorize every dollar to see where your money really goes.
+            {t("expense.subtitle")}
           </p>
         </div>
         <Button
@@ -124,22 +143,22 @@ export function ExpensesClient({
             setOpen(true);
           }}
         >
-          <Plus className="w-4 h-4" /> Add expense
+          <Plus className="w-4 h-4" /> {t("expense.add")}
         </Button>
       </header>
 
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-        <StatCard label="Total expense" value={total} currency={currency} icon="TrendingDown" variant="destructive" delay={0} />
-        <StatCard label="This month" value={sumAmount(monthExp)} currency={currency} icon="TrendingDown" variant="warning" delay={0.05} />
-        <StatCard label="This week" value={sumAmount(weekExp)} currency={currency} icon="TrendingDown" variant="warning" delay={0.1} />
-        <StatCard label="Today" value={sumAmount(dayExp)} currency={currency} icon="TrendingDown" variant="warning" delay={0.15} />
+        <StatCard label={t("expense.total")} value={total} currency={currency} icon="TrendingDown" variant="destructive" delay={0} />
+        <StatCard label={t("common.thisMonth")} value={sumAmount(monthExp)} currency={currency} icon="TrendingDown" variant="warning" delay={0.05} />
+        <StatCard label={t("common.thisWeek")} value={sumAmount(weekExp)} currency={currency} icon="TrendingDown" variant="warning" delay={0.1} />
+        <StatCard label={t("expense.byDay")} value={sumAmount(dayExp)} currency={currency} icon="TrendingDown" variant="warning" delay={0.15} />
       </section>
 
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle>By Category</CardTitle>
-            <p className="text-xs text-muted-foreground">All-time breakdown</p>
+            <CardTitle>{t("expense.byCategory")}</CardTitle>
+            <p className="text-xs text-muted-foreground">{t("common.allTime")}</p>
           </CardHeader>
           <CardContent>
             <CategoryPie data={breakdown} currency={currency} />
@@ -147,8 +166,8 @@ export function ExpensesClient({
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle>Spending by Day</CardTitle>
-            <p className="text-xs text-muted-foreground">All-time</p>
+            <CardTitle>{t("expense.byDay")}</CardTitle>
+            <p className="text-xs text-muted-foreground">{t("common.allTime")}</p>
           </CardHeader>
           <CardContent>
             <SimpleBar data={dayOfWeek} dataKey="total" />
@@ -156,22 +175,22 @@ export function ExpensesClient({
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle>Spend heatmap</CardTitle>
-            <p className="text-xs text-muted-foreground">Last 90 days</p>
+            <CardTitle>{t("expense.heatmap")}</CardTitle>
+            <p className="text-xs text-muted-foreground">{t("expense.last90Days")}</p>
           </CardHeader>
           <CardContent>
             <ExpenseHeatmap data={heatmap} currency={currency} />
             <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
               <div>
-                <p className="text-muted-foreground">Highest</p>
+                <p className="text-muted-foreground">{t("expense.highest")}</p>
                 <p className="font-semibold">
-                  {peak ? formatCurrency(peak.total, currency) : "—"}
+                  {peak ? <CurrencyValue value={peak.total} currency={currency} /> : "—"}
                 </p>
               </div>
               <div>
-                <p className="text-muted-foreground">Lowest</p>
+                <p className="text-muted-foreground">{t("expense.lowest")}</p>
                 <p className="font-semibold">
-                  {low ? formatCurrency(low.total, currency) : "—"}
+                  {low ? <CurrencyValue value={low.total} currency={currency} /> : "—"}
                 </p>
               </div>
             </div>
@@ -182,10 +201,10 @@ export function ExpensesClient({
       <section>
         <Card>
           <CardHeader className="pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <CardTitle>All expenses</CardTitle>
+            <CardTitle>{t("expense.all")}</CardTitle>
             <div className="flex gap-2 w-full sm:w-auto">
               <Input
-                placeholder="Search…"
+                placeholder={t("common.search")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="flex-1 sm:max-w-xs"
@@ -195,10 +214,10 @@ export function ExpensesClient({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ALL">All categories</SelectItem>
+                  <SelectItem value="ALL">{t("expense.allCategories")}</SelectItem>
                   {EXPENSE_CATEGORIES.map((c) => (
                     <SelectItem key={c} value={c}>
-                      {prettyEnum(c)}
+                      {t(`category.${c}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -209,9 +228,9 @@ export function ExpensesClient({
             {!filtered.length ? (
               <div className="px-6 py-10 text-center">
                 <TrendingDown className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
-                <p className="text-sm font-medium">No expenses match</p>
+                <p className="text-sm font-medium">{t("expense.empty")}</p>
                 <p className="text-xs text-muted-foreground">
-                  Try changing your filters or add a new expense.
+                  {t("expense.emptyHint")}
                 </p>
               </div>
             ) : (
@@ -233,19 +252,19 @@ export function ExpensesClient({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm font-medium truncate">
-                          {e.merchant ?? prettyEnum(e.category)}
+                          {e.merchant ?? t(`category.${e.category}`)}
                         </p>
                         <Badge variant="secondary" className="text-[10px]">
-                          {prettyEnum(e.category)}
+                          {t(`category.${e.category}`)}
                         </Badge>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        {formatDate(e.date)} · {prettyEnum(e.paymentMethod)}
+                        {formatDate(e.date)} · {t(`payment.${e.paymentMethod}`)}
                         {e.notes ? ` · ${e.notes}` : ""}
                       </p>
                     </div>
                     <p className="text-sm font-semibold tabular-nums text-destructive">
-                      -{formatCurrency(e.amount, currency)}
+                      -<CurrencyValue value={e.amount} currency={currency} />
                     </p>
                     <div className="flex gap-1 ml-2">
                       <Button
@@ -279,6 +298,15 @@ export function ExpensesClient({
         onOpenChange={setOpen}
         initial={editing}
         onSaved={refresh}
+      />
+
+      <ConfirmModal
+        isOpen={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={onConfirmDelete}
+        title={t("expense.confirmDeleteTitle") || t("common.confirmDelete")}
+        description={t("expense.confirmDelete")}
+        isLoading={isDeleting}
       />
     </div>
   );

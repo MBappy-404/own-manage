@@ -30,6 +30,7 @@ export const incomeSchema = z.object({
   frequency: z.enum(["ONE_TIME", "DAILY", "WEEKLY", "MONTHLY", "YEARLY"]).default("ONE_TIME"),
   date: z.coerce.date(),
   notes: z.string().max(500).optional().or(z.literal("")),
+  financeAccountId: z.string().optional().nullable(),
 });
 
 export const expenseSchema = z.object({
@@ -37,6 +38,8 @@ export const expenseSchema = z.object({
   category: z.enum([
     "FOOD",
     "SHOPPING",
+    "GROCERIES",
+    "DINING",
     "BILLS",
     "TRAVEL",
     "ENTERTAINMENT",
@@ -44,6 +47,14 @@ export const expenseSchema = z.object({
     "MEDICAL",
     "HOUSING",
     "TRANSPORT",
+    "TOYS",
+    "ELECTRONICS",
+    "PERSONAL_CARE",
+    "GIFTS",
+    "INSURANCE",
+    "MAINTENANCE",
+    "CLOTHING",
+    "SUBSCRIPTIONS",
     "OTHERS",
   ]),
   paymentMethod: z.enum([
@@ -56,6 +67,7 @@ export const expenseSchema = z.object({
   date: z.coerce.date(),
   notes: z.string().max(500).optional().or(z.literal("")),
   merchant: z.string().max(80).optional().or(z.literal("")),
+  financeAccountId: z.string().optional().nullable(),
 });
 
 export const savingsGoalSchema = z.object({
@@ -70,6 +82,23 @@ export const profileSchema = z.object({
   name: z.string().min(2).max(80),
   currency: z.string().min(3).max(5),
   monthlyBudget: z.coerce.number().min(0).optional().nullable(),
+  appPassword: z.string().min(4, "App Password must be at least 4 characters").max(20).optional().or(z.literal("")),
+});
+
+export const financeAccountSchema = z.object({
+  name: z.string().min(1, "Name is required").max(50),
+  balance: z.coerce.number().min(0).default(0),
+  currency: z.string().min(1).max(10).default("BDT"),
+  icon: z.string().optional().nullable(),
+});
+
+export const debtSchema = z.object({
+  personName: z.string().min(1, "Person name is required").max(80),
+  amount: z.coerce.number().positive("Amount must be greater than 0"),
+  type: z.enum(["GIVEN", "TAKEN"]),
+  dueDate: z.coerce.date().optional().nullable(),
+  status: z.enum(["PENDING", "PAID"]).default("PENDING"),
+  notes: z.string().max(500).optional().or(z.literal("")),
 });
 
 export type RegisterInput = z.infer<typeof registerSchema>;
@@ -78,3 +107,5 @@ export type IncomeInput = z.infer<typeof incomeSchema>;
 export type ExpenseInput = z.infer<typeof expenseSchema>;
 export type SavingsGoalInput = z.infer<typeof savingsGoalSchema>;
 export type ProfileInput = z.infer<typeof profileSchema>;
+export type FinanceAccountInput = z.infer<typeof financeAccountSchema>;
+export type DebtInput = z.infer<typeof debtSchema>;

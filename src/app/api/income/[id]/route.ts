@@ -19,17 +19,41 @@ export async function PUT(
   });
   if (!existing) return fail("Not found", 404);
 
-  const income = await prisma.income.update({
-    where: { id: params.id },
-    data: {
-      ...(parsed.data.amount !== undefined && { amount: parsed.data.amount }),
-      ...(parsed.data.source !== undefined && { source: parsed.data.source }),
-      ...(parsed.data.category !== undefined && { category: parsed.data.category }),
-      ...(parsed.data.frequency !== undefined && { frequency: parsed.data.frequency }),
-      ...(parsed.data.date !== undefined && { date: parsed.data.date }),
-      ...(parsed.data.notes !== undefined && { notes: parsed.data.notes || null }),
-    },
+  const income = await prisma.$transaction(async (tx) => {
+    // Revert old account balance if it existed
+    if (existing.financeAccountId) {
+      await tx.financeAccount.update({
+        where: { id: existing.financeAccountId },
+        data: { balance: { decrement: existing.amount } },
+      });
+    }
+
+    const updated = await tx.income.update({
+      where: { id: params.id },
+      data: {
+        ...(parsed.data.amount !== undefined && { amount: parsed.data.amount }),
+        ...(parsed.data.source !== undefined && { source: parsed.data.source }),
+        ...(parsed.data.category !== undefined && { category: parsed.data.category }),
+        ...(parsed.data.frequency !== undefined && { frequency: parsed.data.frequency }),
+        ...(parsed.data.date !== undefined && { date: parsed.data.date }),
+        ...(parsed.data.notes !== undefined && { notes: parsed.data.notes || null }),
+        ...(parsed.data.financeAccountId !== undefined && {
+          financeAccountId: parsed.data.financeAccountId || null,
+        }),
+      },
+    });
+
+    // Apply new balance if account exists
+    if (updated.financeAccountId) {
+      await tx.financeAccount.update({
+        where: { id: updated.financeAccountId },
+        data: { balance: { increment: updated.amount } },
+      });
+    }
+
+    return updated;
   });
+
   return ok({ income });
 }
 
@@ -45,6 +69,15 @@ export async function DELETE(
   });
   if (!existing) return fail("Not found", 404);
 
-  await prisma.income.delete({ where: { id: params.id } });
+  await prisma.$transaction(async (tx) => {
+    if (existing.financeAccountId) {
+      await tx.financeAccount.update({
+        where: { id: existing.financeAccountId },
+        data: { balance: { decrement: existing.amount } },
+      });
+    }
+    await tx.income.delete({ where: { id: params.id } });
+  });
+
   return ok({ ok: true });
 }

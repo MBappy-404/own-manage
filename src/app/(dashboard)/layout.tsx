@@ -3,8 +3,7 @@ import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
 import { Sidebar } from "@/components/layout/sidebar";
-import { BottomNav } from "@/components/layout/bottom-nav";
-import { TopBar } from "@/components/layout/top-bar";
+import { DashboardLayoutClient } from "@/components/layout/dashboard-layout-client";
 
 export default async function DashboardLayout({
   children,
@@ -18,11 +17,9 @@ export default async function DashboardLayout({
     <div className="flex min-h-svh">
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0">
-        <TopBar user={session.user} />
-        <main className="flex-1 pb-24 md:pb-8">
-          <div className="container max-w-6xl py-4 md:py-8">{children}</div>
-        </main>
-        <BottomNav />
+        <DashboardLayoutClient user={session.user}>
+          {children}
+        </DashboardLayoutClient>
       </div>
     </div>
   );

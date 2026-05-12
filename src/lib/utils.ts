@@ -8,9 +8,17 @@ export function cn(...inputs: ClassValue[]) {
 export function formatCurrency(
   amount: number,
   currency: string = "USD",
-  locale: string = "en-US",
+  locale: string = "en",
 ): string {
-  return new Intl.NumberFormat(locale, {
+  const numberLocale = locale === "bn" ? "bn-BD" : "en-US";
+  if (currency === "BDT") {
+    const formatted = new Intl.NumberFormat(numberLocale, {
+      maximumFractionDigits: 0,
+    }).format(amount || 0);
+    // Using a bolder Taka symbol approach if possible, but for string we just return the char
+    return `৳${formatted}`;
+  }
+  return new Intl.NumberFormat(numberLocale, {
     style: "currency",
     currency,
     maximumFractionDigits: 2,
@@ -20,8 +28,17 @@ export function formatCurrency(
 export function formatCompactCurrency(
   amount: number,
   currency: string = "USD",
+  locale: string = "en",
 ): string {
-  return new Intl.NumberFormat("en-US", {
+  const numberLocale = locale === "bn" ? "bn-BD" : "en-US";
+  if (currency === "BDT") {
+    const formatted = new Intl.NumberFormat(numberLocale, {
+      notation: "compact",
+      maximumFractionDigits: 1,
+    }).format(amount || 0);
+    return `৳${formatted}`;
+  }
+  return new Intl.NumberFormat(numberLocale, {
     style: "currency",
     currency,
     notation: "compact",
@@ -61,6 +78,8 @@ export function safeDivide(a: number, b: number): number {
 export const EXPENSE_CATEGORIES = [
   "FOOD",
   "SHOPPING",
+  "GROCERIES",
+  "DINING",
   "BILLS",
   "TRAVEL",
   "ENTERTAINMENT",
@@ -68,6 +87,14 @@ export const EXPENSE_CATEGORIES = [
   "MEDICAL",
   "HOUSING",
   "TRANSPORT",
+  "TOYS",
+  "ELECTRONICS",
+  "PERSONAL_CARE",
+  "GIFTS",
+  "INSURANCE",
+  "MAINTENANCE",
+  "CLOTHING",
+  "SUBSCRIPTIONS",
   "OTHERS",
 ] as const;
 
@@ -97,6 +124,8 @@ export function prettyEnum(value: string): string {
 export const CATEGORY_COLORS: Record<string, string> = {
   FOOD: "#f97316",
   SHOPPING: "#ec4899",
+  GROCERIES: "#10b981",
+  DINING: "#f43f5e",
   BILLS: "#0ea5e9",
   TRAVEL: "#22c55e",
   ENTERTAINMENT: "#a855f7",
@@ -104,6 +133,14 @@ export const CATEGORY_COLORS: Record<string, string> = {
   MEDICAL: "#ef4444",
   HOUSING: "#14b8a6",
   TRANSPORT: "#6366f1",
+  TOYS: "#fbbf24",
+  ELECTRONICS: "#3b82f6",
+  PERSONAL_CARE: "#d946ef",
+  GIFTS: "#facc15",
+  INSURANCE: "#6b7280",
+  MAINTENANCE: "#7c3aed",
+  CLOTHING: "#06b6d4",
+  SUBSCRIPTIONS: "#4f46e5",
   OTHERS: "#64748b",
 };
 

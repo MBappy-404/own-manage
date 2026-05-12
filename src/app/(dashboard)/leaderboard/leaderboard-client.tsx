@@ -8,7 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn, formatCurrency, getInitials } from "@/lib/utils";
+import { cn, getInitials } from "@/lib/utils";
+import { CurrencyValue } from "@/components/ui/currency-value";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -21,6 +22,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { useI18n } from "@/lib/i18n/provider";
 
 type Row = {
   id: string;
@@ -42,13 +44,14 @@ type Response = {
   totalUsers: number;
 };
 
-export function LeaderboardClient({ 
-  currency, 
-  isAdmin 
-}: { 
+export function LeaderboardClient({
+  currency,
+  isAdmin
+}: {
   currency: string;
   isAdmin: boolean;
 }) {
+  const { t } = useI18n();
   const [period, setPeriod] = React.useState<"week" | "month" | "all">("month");
   const [sort, setSort] = React.useState<"savings" | "income" | "expense">("savings");
   const [data, setData] = React.useState<Response | null>(null);
@@ -76,29 +79,29 @@ export function LeaderboardClient({
     <div className="space-y-6">
       <header>
         <div className="flex items-center gap-2 text-xs text-muted-foreground uppercase tracking-wide font-medium">
-          <Trophy className="w-4 h-4 text-primary" /> Global ranks
+          <Trophy className="w-4 h-4 text-primary" /> {t("leaderboard.globalRanks")}
         </div>
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight mt-1">
-          Leaderboard
+          {t("leaderboard.title")}
         </h1>
         <p className="text-sm text-muted-foreground">
-          See where you stand among other OwnManage users.
+          {t("leaderboard.subtitle")}
         </p>
       </header>
 
       <div className="flex flex-wrap gap-3 items-center justify-between">
         <Tabs value={period} onValueChange={(v) => setPeriod(v as typeof period)}>
           <TabsList>
-            <TabsTrigger value="week">Weekly</TabsTrigger>
-            <TabsTrigger value="month">Monthly</TabsTrigger>
-            <TabsTrigger value="all">All-time</TabsTrigger>
+            <TabsTrigger value="week">{t("leaderboard.weekly")}</TabsTrigger>
+            <TabsTrigger value="month">{t("leaderboard.monthly")}</TabsTrigger>
+            <TabsTrigger value="all">{t("common.allTime")}</TabsTrigger>
           </TabsList>
         </Tabs>
         <Tabs value={sort} onValueChange={(v) => setSort(v as typeof sort)}>
           <TabsList>
-            <TabsTrigger value="savings">Savings</TabsTrigger>
-            <TabsTrigger value="income">Income</TabsTrigger>
-            <TabsTrigger value="expense">Expense</TabsTrigger>
+            <TabsTrigger value="savings">{t("leaderboard.savings")}</TabsTrigger>
+            <TabsTrigger value="income">{t("leaderboard.income")}</TabsTrigger>
+            <TabsTrigger value="expense">{t("leaderboard.expense")}</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
@@ -106,16 +109,16 @@ export function LeaderboardClient({
       <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {loading
           ? Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} className="h-40 w-full" />
-            ))
+            <Skeleton key={i} className="h-40 w-full" />
+          ))
           : top3.map((row, i) => <PodiumCard key={row.id} row={row} index={i} currency={currency} />)}
       </section>
 
       <Card>
         <CardHeader className="pb-3 flex flex-row items-center justify-between">
-          <CardTitle>Full ranking</CardTitle>
+          <CardTitle>{t("leaderboard.full")}</CardTitle>
           <span className="text-xs text-muted-foreground">
-            {data?.totalUsers ?? 0} users tracked
+            {t("leaderboard.usersTracked", { n: data?.totalUsers ?? 0 })}
           </span>
         </CardHeader>
         <CardContent className="px-0">
@@ -127,7 +130,7 @@ export function LeaderboardClient({
             </div>
           ) : !leaderboard.length ? (
             <p className="px-6 text-sm text-muted-foreground">
-              No users tracked yet.
+              {t("common.loading")}
             </p>
           ) : (
             <ul className="divide-y">
@@ -151,13 +154,13 @@ export function LeaderboardClient({
                       {row.name}
                       {row.isCurrentUser && (
                         <span className="ml-2 text-[10px] uppercase tracking-wide text-primary">
-                          You
+                          {t("common.you")}
                         </span>
                       )}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Income {formatCurrency(row.income, currency)} · Expense{" "}
-                      {formatCurrency(row.expense, currency)}
+                      {t("leaderboard.income")} <CurrencyValue value={row.income} currency={currency} /> · {t("leaderboard.expense")}{" "}
+                      <CurrencyValue value={row.expense} currency={currency} />
                     </p>
                   </div>
                   <p
@@ -166,7 +169,7 @@ export function LeaderboardClient({
                       row.savings >= 0 ? "text-success" : "text-destructive",
                     )}
                   >
-                    {formatCurrency(row.savings, currency)}
+                    <CurrencyValue value={row.savings} currency={currency} />
                   </p>
                   {isAdmin && !row.isCurrentUser && (
                     <div className="flex items-center gap-1 ml-4">
@@ -200,9 +203,7 @@ export function LeaderboardClient({
           <CardContent className="p-4 flex items-center gap-3">
             <Trophy className="w-5 h-5 text-primary" />
             <p className="text-sm">
-              Your current rank is{" "}
-              <span className="font-bold">#{data.currentUserRank.rank}</span> of{" "}
-              {data.totalUsers}.
+              {t("leaderboard.rankBanner", { rank: data.currentUserRank.rank, total: data.totalUsers })}
             </p>
           </CardContent>
         </Card>
@@ -212,14 +213,14 @@ export function LeaderboardClient({
       <Dialog open={!!editingUser} onOpenChange={(open) => !open && setEditingUser(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit User</DialogTitle>
+            <DialogTitle>{t("leaderboard.editUser")}</DialogTitle>
             <DialogDescription>
-              Update user details for {editingUser?.name}.
+              {t("leaderboard.updateUserDetails", { name: editingUser?.name ?? "" })}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
+              <Label htmlFor="name">{t("common.fullName")}</Label>
               <Input
                 id="name"
                 defaultValue={editingUser?.name}
@@ -227,7 +228,7 @@ export function LeaderboardClient({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
+              <Label htmlFor="email">{t("common.email")}</Label>
               <Input
                 id="email"
                 defaultValue={editingUser?.email}
@@ -245,7 +246,7 @@ export function LeaderboardClient({
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditingUser(null)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               disabled={submitting}
@@ -254,7 +255,7 @@ export function LeaderboardClient({
                 const name = (document.getElementById("name") as HTMLInputElement).value;
                 const email = (document.getElementById("email") as HTMLInputElement).value;
                 const image = (document.getElementById("image") as HTMLInputElement).value;
-                
+
                 setSubmitting(true);
                 try {
                   const res = await fetch(`/api/admin/users/${editingUser.id}`, {
@@ -262,18 +263,18 @@ export function LeaderboardClient({
                     body: JSON.stringify({ name, email, image }),
                   });
                   if (!res.ok) throw new Error("Failed to update");
-                  toast.success("User updated successfully");
+                  toast.success(t("settings.updated"));
                   setEditingUser(null);
                   refreshData();
                 } catch {
-                  toast.error("Failed to update user");
+                  toast.error(t("settings.updateFailed"));
                 } finally {
                   setSubmitting(false);
                 }
               }}
             >
               {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save Changes
+              {t("common.saveChanges")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -283,14 +284,14 @@ export function LeaderboardClient({
       <Dialog open={!!deletingId} onOpenChange={(open) => !open && setDeletingId(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete User</DialogTitle>
+            <DialogTitle>{t("leaderboard.deleteUser")}</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this user? This action cannot be undone and will delete all their data.
+              {t("leaderboard.confirmDeleteUser")}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeletingId(null)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               variant="destructive"
@@ -303,18 +304,18 @@ export function LeaderboardClient({
                     method: "DELETE",
                   });
                   if (!res.ok) throw new Error("Failed to delete");
-                  toast.success("User deleted successfully");
+                  toast.success(t("income.deleted"));
                   setDeletingId(null);
                   refreshData();
                 } catch {
-                  toast.error("Failed to delete user");
+                  toast.error(t("settings.updateFailed"));
                 } finally {
                   setSubmitting(false);
                 }
               }}
             >
               {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Delete User
+              {t("common.delete")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -332,6 +333,7 @@ function PodiumCard({
   index: number;
   currency: string;
 }) {
+  const { t } = useI18n();
   const meta = [
     { icon: Crown, color: "from-amber-400 to-yellow-500", label: "1st" },
     { icon: Medal, color: "from-slate-300 to-slate-500", label: "2nd" },
@@ -361,7 +363,7 @@ function PodiumCard({
             </p>
             <p className="font-bold truncate text-base">{row.name}</p>
             <p className="text-xs text-muted-foreground">
-              Savings {formatCurrency(row.savings, currency)}
+              {t("leaderboard.savings")} <CurrencyValue value={row.savings} currency={currency} />
             </p>
           </div>
           <Avatar className="w-10 h-10">

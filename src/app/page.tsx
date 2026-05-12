@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, BarChart3, Brain, LineChart, PiggyBank, ShieldCheck, Sparkles, Trophy, Wallet } from "lucide-react";
+import { ArrowRight, BarChart3, Brain, LineChart, PiggyBank, ShieldCheck, Sparkles, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { LanguageToggle } from "@/components/layout/language-toggle";
@@ -29,11 +29,6 @@ export default function Home() {
       icon: PiggyBank,
       title: t("landing.feature.savings.title"),
       desc: t("landing.feature.savings.desc"),
-    },
-    {
-      icon: Trophy,
-      title: t("landing.feature.leaderboard.title"),
-      desc: t("landing.feature.leaderboard.desc"),
     },
     {
       icon: ShieldCheck,
@@ -95,7 +90,6 @@ export default function Home() {
         <div className="mt-16 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5"><LineChart className="w-4 h-4" /> {t("landing.chips.realtime")}</span>
           <span className="flex items-center gap-1.5"><Brain className="w-4 h-4" /> {t("landing.chips.ai")}</span>
-          <span className="flex items-center gap-1.5"><Trophy className="w-4 h-4" /> {t("landing.chips.leaderboard")}</span>
           <span className="flex items-center gap-1.5"><ShieldCheck className="w-4 h-4" /> {t("landing.chips.secure")}</span>
         </div>
       </section>

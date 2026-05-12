@@ -9,15 +9,19 @@ import {
   TrendingUp,
   TrendingDown,
   Sparkles,
+  DollarSign,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { cn, formatCurrency } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n/provider";
+import { CurrencyValue } from "@/components/ui/currency-value";
 
 const iconMap = {
   Wallet,
   TrendingUp,
   TrendingDown,
   Sparkles,
+  DollarSign,
 } as const;
 
 export type StatIconName = keyof typeof iconMap;
@@ -28,7 +32,7 @@ type Props = {
   currency: string;
   icon: StatIconName;
   trend?: number | null;
-  variant?: "default" | "primary" | "success" | "destructive" | "warning";
+  variant?: "default" | "primary" | "success" | "destructive" | "warning" | "premium";
   hint?: string;
   delay?: number;
 };
@@ -39,6 +43,7 @@ const variantStyles: Record<NonNullable<Props["variant"]>, string> = {
   success: "from-success/15 to-success/5",
   destructive: "from-destructive/15 to-destructive/5",
   warning: "from-warning/15 to-warning/5",
+  premium: "from-primary/20 via-accent/10 to-primary/20",
 };
 
 const iconStyles: Record<NonNullable<Props["variant"]>, string> = {
@@ -47,6 +52,7 @@ const iconStyles: Record<NonNullable<Props["variant"]>, string> = {
   success: "bg-success text-success-foreground",
   destructive: "bg-destructive text-destructive-foreground",
   warning: "bg-warning text-warning-foreground",
+  premium: "bg-premium-gradient text-white shadow-lg shadow-primary/20",
 };
 
 export function StatCard({
@@ -59,6 +65,7 @@ export function StatCard({
   hint,
   delay = 0,
 }: Props) {
+  useI18n();
   const Icon = iconMap[icon];
   return (
     <motion.div
@@ -81,7 +88,7 @@ export function StatCard({
                 {label}
               </p>
               <p className="mt-2 text-2xl font-bold tracking-tight">
-                {formatCurrency(value, currency)}
+                <CurrencyValue value={value} currency={currency} />
               </p>
               {hint && (
                 <p className="text-xs text-muted-foreground mt-1">{hint}</p>

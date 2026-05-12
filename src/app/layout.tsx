@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Hind_Siliguri } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { getServerLocale } from "@/lib/i18n/server";
@@ -7,6 +7,13 @@ import { getServerLocale } from "@/lib/i18n/server";
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
+  display: "swap",
+});
+
+const hindSiliguri = Hind_Siliguri({
+  weight: ["400", "500", "600", "700"],
+  subsets: ["bengali"],
+  variable: "--font-bengali",
   display: "swap",
 });
 
@@ -51,7 +58,7 @@ export default function RootLayout({
   const locale = getServerLocale();
   return (
     <html lang={locale} suppressHydrationWarning>
-      <body className={`${inter.variable} font-sans antialiased`}>
+      <body className={`${inter.variable} ${hindSiliguri.variable} font-sans antialiased`}>
         <Providers initialLocale={locale}>{children}</Providers>
       </body>
     </html>

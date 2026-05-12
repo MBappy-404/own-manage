@@ -64,7 +64,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
 /**
  * Helper to perform a fetch that queues if offline
  */
-export async function smartFetch(url: string, options: RequestInit) {
+export async function smartFetch(url: string, options: RequestInit = {}) {
   if (typeof window !== "undefined" && !navigator.onLine && options.method !== "GET") {
     await enqueueMutation({
       url,

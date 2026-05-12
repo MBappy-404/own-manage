@@ -19,6 +19,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { InsightsList } from "@/components/dashboard/insights-list";
 import { IncomeExpenseArea } from "@/components/charts/area-chart";
 import { formatCurrency } from "@/lib/utils";
+import { AISummaryCard } from "@/components/dashboard/ai-summary-card";
+import { getDate, getDaysInMonth } from "date-fns";
+import { financialHealthScore } from "@/lib/analytics";
 
 export const metadata = { title: "AI Insights" };
 
@@ -27,7 +30,7 @@ export default async function InsightsPage() {
   if (!session?.user) return null;
   const userId = session.user.id;
   const currency = session.user.currency || "USD";
-  const { t } = getServerT();
+  const { t, locale } = getServerT();
 
   const [incomes, expenses, profile] = await Promise.all([
     prisma.income.findMany({ where: { userId }, orderBy: { date: "desc" } }),
@@ -42,11 +45,26 @@ export default async function InsightsPage() {
     incomes,
     expenses,
     monthlyBudget: profile?.monthlyBudget,
+    t,
   });
 
   const month = periodInterval("month");
   const monthExp = filterByInterval(expenses, month.start, month.end);
   const monthInc = filterByInterval(incomes, month.start, month.end);
+
+  const now = new Date();
+  const currentDay = getDate(now);
+  const totalDays = getDaysInMonth(now);
+  const sumExpThis = sumAmount(monthExp);
+  const projectedSpend = currentDay > 0 ? (sumExpThis / currentDay) * totalDays : 0;
+
+  const healthScore = financialHealthScore({
+    income: sumAmount(monthInc),
+    expense: sumExpThis,
+    monthlyBudget: profile?.monthlyBudget,
+    expenseCount: monthExp.length,
+  });
+
   const top = categoryBreakdown(monthExp)[0];
   const peak = highestSpendingDay(expenses);
   const low = lowestSpendingDay(expenses);
@@ -64,7 +82,16 @@ export default async function InsightsPage() {
         <p className="text-sm text-muted-foreground">{t("insights.subtitle")}</p>
       </header>
 
-      <section>
+      <section className="space-y-6">
+        <AISummaryCard
+          healthScore={healthScore}
+          projectedSpending={projectedSpend}
+          monthlyBudget={profile?.monthlyBudget}
+          currency={currency}
+          locale={locale}
+          topInsightMessage={insights[0]?.message}
+        />
+
         <InsightsList insights={insights} />
       </section>
 
@@ -87,27 +114,27 @@ export default async function InsightsPage() {
           <CardContent className="space-y-3 text-sm">
             <Row
               label={t("insights.topCategory")}
-              value={top ? `${top.category} (${formatCurrency(top.total, currency)})` : "—"}
+              value={top ? `${t(`category.${top.category}`)} (${formatCurrency(top.total, currency, locale)})` : "—"}
             />
             <Row
               label={t("insights.bestMonth")}
-              value={best ? `${best.month} (${formatCurrency(best.total, currency)})` : "—"}
+              value={best ? `${best.month} (${formatCurrency(best.total, currency, locale)})` : "—"}
             />
             <Row
               label={t("insights.peakDay")}
-              value={peak ? `${peak.date} (${formatCurrency(peak.total, currency)})` : "—"}
+              value={peak ? `${peak.date} (${formatCurrency(peak.total, currency, locale)})` : "—"}
             />
             <Row
               label={t("insights.lowDay")}
-              value={low ? `${low.date} (${formatCurrency(low.total, currency)})` : "—"}
+              value={low ? `${low.date} (${formatCurrency(low.total, currency, locale)})` : "—"}
             />
             <Row
               label={t("insights.monthIncome")}
-              value={formatCurrency(sumAmount(monthInc), currency)}
+              value={formatCurrency(sumAmount(monthInc), currency, locale)}
             />
             <Row
               label={t("insights.monthExpense")}
-              value={formatCurrency(sumAmount(monthExp), currency)}
+              value={formatCurrency(sumAmount(monthExp), currency, locale)}
             />
           </CardContent>
         </Card>

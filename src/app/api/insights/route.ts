@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { generateInsights } from "@/lib/insights";
+import { getServerT } from "@/lib/i18n/server";
 import { ok, requireUser } from "@/lib/api-helpers";
 
 export async function GET() {
@@ -15,10 +16,13 @@ export async function GET() {
     }),
   ]);
 
+  const { t } = getServerT();
+
   const insights = generateInsights({
     incomes,
     expenses,
     monthlyBudget: profile?.monthlyBudget,
+    t,
   });
 
   return ok({ insights });

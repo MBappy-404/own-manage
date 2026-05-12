@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import type { Insight } from "@/lib/insights";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n/provider";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   TrendingUp,
@@ -53,11 +54,13 @@ const toneStyles = {
 } as const;
 
 export function InsightsList({ insights }: { insights: Insight[] }) {
+  const { t } = useI18n();
   if (!insights.length) {
     return (
       <div className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
         <Brain className="w-6 h-6 mx-auto mb-2 text-primary" />
-        Add a few transactions and your AI insights will appear here.
+        <p className="font-semibold">{t("insights.emptyTitle")}</p>
+        <p className="text-xs">{t("insights.emptyHint")}</p>
       </div>
     );
   }

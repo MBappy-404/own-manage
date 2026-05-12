@@ -8,7 +8,7 @@ import { Loader2 } from "lucide-react";
 import { format } from "date-fns";
 
 import { expenseSchema, type ExpenseInput } from "@/lib/validations";
-import { EXPENSE_CATEGORIES, PAYMENT_METHODS, prettyEnum } from "@/lib/utils";
+import { EXPENSE_CATEGORIES, PAYMENT_METHODS } from "@/lib/utils";
 import { smartFetch } from "@/lib/sync";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +29,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useI18n } from "@/lib/i18n/provider";
 
 type Expense = {
   id: string;
@@ -38,6 +39,14 @@ type Expense = {
   date: Date | string;
   notes?: string | null;
   merchant?: string | null;
+  financeAccountId?: string | null;
+};
+
+type FinanceAccount = {
+  id: string;
+  name: string;
+  balance: number;
+  currency: string;
 };
 
 type Props = {
@@ -48,7 +57,10 @@ type Props = {
 };
 
 export function ExpenseFormDialog({ open, onOpenChange, initial, onSaved }: Props) {
+  const { t } = useI18n();
   const editing = !!initial;
+  const [accounts, setAccounts] = React.useState<FinanceAccount[]>([]);
+
   const {
     register,
     handleSubmit,
@@ -65,8 +77,22 @@ export function ExpenseFormDialog({ open, onOpenChange, initial, onSaved }: Prop
       date: new Date(),
       notes: "",
       merchant: "",
+      financeAccountId: "",
     },
   });
+
+  React.useEffect(() => {
+    async function fetchAccounts() {
+      const res = await smartFetch("/api/finance-accounts");
+      if (res.ok) {
+        const data = await res.json();
+        setAccounts(data.accounts || []);
+      }
+    }
+    if (open) {
+      fetchAccounts();
+    }
+  }, [open]);
 
   React.useEffect(() => {
     if (initial) {
@@ -77,6 +103,7 @@ export function ExpenseFormDialog({ open, onOpenChange, initial, onSaved }: Prop
         date: new Date(initial.date),
         notes: initial.notes ?? "",
         merchant: initial.merchant ?? "",
+        financeAccountId: initial.financeAccountId ?? "",
       });
     } else if (open) {
       reset({
@@ -86,6 +113,7 @@ export function ExpenseFormDialog({ open, onOpenChange, initial, onSaved }: Prop
         date: new Date(),
         notes: "",
         merchant: "",
+        financeAccountId: "",
       });
     }
   }, [initial, open, reset]);
@@ -99,10 +127,10 @@ export function ExpenseFormDialog({ open, onOpenChange, initial, onSaved }: Prop
       body: JSON.stringify(values),
     });
     if (!res.ok) {
-      toast.error("Could not save expense");
+      toast.error(t("settings.updateFailed"));
       return;
     }
-    toast.success(editing ? "Expense updated" : "Expense added");
+    toast.success(editing ? t("expense.updated") : t("expense.added"));
     onOpenChange(false);
     onSaved();
   }
@@ -110,29 +138,30 @@ export function ExpenseFormDialog({ open, onOpenChange, initial, onSaved }: Prop
   const date = watch("date");
   const category = watch("category");
   const paymentMethod = watch("paymentMethod");
+  const financeAccountId = watch("financeAccountId");
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{editing ? "Edit expense" : "Add expense"}</DialogTitle>
+          <DialogTitle>{editing ? t("expense.edit") : t("expense.add")}</DialogTitle>
           <DialogDescription>
-            Capture each spend to power smarter analytics & AI insights.
+            {t("expense.dialogSubtitle")}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5 col-span-2">
-              <Label htmlFor="merchant">Merchant / What for</Label>
-              <Input id="merchant" placeholder="e.g. Whole Foods, Uber" {...register("merchant")} />
+              <Label htmlFor="merchant">{t("expense.merchant")}</Label>
+              <Input id="merchant" placeholder={t("expense.merchantPlaceholder")} {...register("merchant")} />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="amount">Amount</Label>
+              <Label htmlFor="amount">{t("common.amount")}</Label>
               <Input id="amount" type="number" step="0.01" {...register("amount")} />
               {errors.amount && <p className="text-xs text-destructive">{errors.amount.message}</p>}
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="date">Date</Label>
+              <Label htmlFor="date">{t("common.date")}</Label>
               <Input
                 id="date"
                 type="date"
@@ -143,7 +172,7 @@ export function ExpenseFormDialog({ open, onOpenChange, initial, onSaved }: Prop
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Category</Label>
+              <Label>{t("common.category")}</Label>
               <Select
                 value={category}
                 onValueChange={(v) => setValue("category", v as ExpenseInput["category"])}
@@ -154,14 +183,14 @@ export function ExpenseFormDialog({ open, onOpenChange, initial, onSaved }: Prop
                 <SelectContent>
                   {EXPENSE_CATEGORIES.map((c) => (
                     <SelectItem key={c} value={c}>
-                      {prettyEnum(c)}
+                      {t(`category.${c}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>Payment method</Label>
+              <Label>{t("expense.paymentMethod")}</Label>
               <Select
                 value={paymentMethod}
                 onValueChange={(v) =>
@@ -174,24 +203,47 @@ export function ExpenseFormDialog({ open, onOpenChange, initial, onSaved }: Prop
                 <SelectContent>
                   {PAYMENT_METHODS.map((c) => (
                     <SelectItem key={c} value={c}>
-                      {prettyEnum(c)}
+                      {t(`payment.${c}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
+            {accounts.length > 0 && (
+              <div className="space-y-1.5 col-span-2">
+                <Label>{t("accounts.title")}</Label>
+                <Select
+                  value={financeAccountId || "none"}
+                  onValueChange={(v) =>
+                    setValue("financeAccountId", v === "none" ? "" : v)
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("common.optional")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">{t("common.none")}</SelectItem>
+                    {accounts.map((acc) => (
+                      <SelectItem key={acc.id} value={acc.id}>
+                        {acc.name} ({acc.balance} {acc.currency})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="notes">Notes</Label>
-            <Textarea id="notes" placeholder="Optional" rows={2} {...register("notes")} />
+            <Label htmlFor="notes">{t("common.notes")}</Label>
+            <Textarea id="notes" placeholder={t("common.optional")} rows={2} {...register("notes")} />
           </div>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button type="submit" variant="premium" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-              {editing ? "Save changes" : "Add expense"}
+              {editing ? t("common.saveChanges") : t("expense.add")}
             </Button>
           </DialogFooter>
         </form>

@@ -8,6 +8,7 @@ import { PWARegister } from "@/components/pwa-register";
 import { I18nProvider } from "@/lib/i18n/provider";
 import type { Locale } from "@/lib/i18n/translations";
 import { SyncProvider } from "@/lib/sync";
+import { LockProvider } from "@/components/providers/lock-provider";
 
 export function Providers({
   children,
@@ -25,7 +26,9 @@ export function Providers({
         disableTransitionOnChange
       >
         <I18nProvider initialLocale={initialLocale}>
-          <SyncProvider>{children}</SyncProvider>
+          <SyncProvider>
+            <LockProvider>{children}</LockProvider>
+          </SyncProvider>
           <Toaster
             richColors
             position="top-center"

@@ -29,24 +29,24 @@ enum PaymentMethod {
   OTHER
 }
 
-enum ExpenseCategory {
-  FOOD
-  SHOPPING
-  BILLS
-  TRAVEL
-  ENTERTAINMENT
-  EDUCATION
-  MEDICAL
-  HOUSING
-  TRANSPORT
-  OTHERS
-}
+// We use String for categories to allow flexibility and avoid prisma generate issues on Windows
+// enum ExpenseCategory { ... }
 
 enum NotificationType {
   INFO
   WARNING
   SUCCESS
   ALERT
+}
+
+enum DebtType {
+  GIVEN
+  TAKEN
+}
+
+enum DebtStatus {
+  PENDING
+  PAID
 }
 
 model User {
@@ -59,6 +59,7 @@ model User {
   role          Role      @default(USER)
   currency      String    @default("USD")
   monthlyBudget Float?
+  appPassword   String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -67,6 +68,8 @@ model User {
   incomes       Income[]
   expenses      Expense[]
   savingsGoals  SavingsGoal[]
+  financeAccounts FinanceAccount[]
+  debts         Debt[]
   notifications Notification[]
   passwordResetTokens PasswordResetToken[]
 }
@@ -127,10 +130,12 @@ model Income {
   frequency IncomeFrequency @default(ONE_TIME)
   date      DateTime
   notes     String?
+  financeAccountId String?   @db.ObjectId
   createdAt DateTime        @default(now())
   updatedAt DateTime        @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  financeAccount FinanceAccount? @relation(fields: [financeAccountId], references: [id])
 
   @@index([userId, date])
 }
@@ -139,15 +144,17 @@ model Expense {
   id            String          @id @default(auto()) @map("_id") @db.ObjectId
   userId        String          @db.ObjectId
   amount        Float
-  category      ExpenseCategory @default(OTHERS)
+  category      String          @default("OTHERS")
   paymentMethod PaymentMethod   @default(CASH)
   date          DateTime
   notes         String?
   merchant      String?
+  financeAccountId String?      @db.ObjectId
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  financeAccount FinanceAccount? @relation(fields: [financeAccountId], references: [id])
 
   @@index([userId, date])
   @@index([userId, category])
@@ -181,4 +188,38 @@ model Notification {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, read])
+}
+
+model FinanceAccount {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  name      String
+  balance   Float    @default(0)
+  currency  String   @default("BDT")
+  icon      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expenses Expense[]
+  incomes  Income[]
+
+  @@index([userId])
+}
+
+model Debt {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String   @db.ObjectId
+  personName  String
+  amount      Float
+  type        DebtType
+  dueDate     DateTime?
+  status      DebtStatus @default(PENDING)
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
