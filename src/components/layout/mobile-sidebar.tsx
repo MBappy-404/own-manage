@@ -18,6 +18,7 @@ import {
   Users,
   Wallet,
   X,
+  MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n/provider";
@@ -30,9 +31,10 @@ const navItems = [
   { href: "/accounts", labelKey: "nav.accounts", icon: CreditCard },
   { href: "/debts", labelKey: "nav.debts", icon: Users },
   { href: "/insights", labelKey: "nav.insights", icon: Brain },
-  { href: "/leaderboard", labelKey: "nav.leaderboard", icon: Trophy, adminOnly: true },
+  { href: "/leaderboard", labelKey: "nav.adminHub", icon: Trophy, adminOnly: true },
   { href: "/savings", labelKey: "nav.savings", icon: PiggyBank },
   { href: "/reports", labelKey: "nav.reports", icon: FileText },
+  { href: "/feedback", labelKey: "nav.feedback", icon: MessageSquare },
   { href: "/settings", labelKey: "nav.settings", icon: Settings },
 ];
 

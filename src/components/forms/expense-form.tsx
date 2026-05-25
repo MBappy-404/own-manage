@@ -180,7 +180,7 @@ export function ExpenseFormDialog({ open, onOpenChange, initial, onSaved }: Prop
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-h-60">
                   {EXPENSE_CATEGORIES.map((c) => (
                     <SelectItem key={c} value={c}>
                       {t(`category.${c}`)}
@@ -234,8 +234,13 @@ export function ExpenseFormDialog({ open, onOpenChange, initial, onSaved }: Prop
             )}
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="notes">{t("common.notes")}</Label>
-            <Textarea id="notes" placeholder={t("common.optional")} rows={2} {...register("notes")} />
+            <Label htmlFor="notes">{t("expense.detailsLabel")}</Label>
+            <Textarea
+              id="notes"
+              placeholder={t("expense.detailsPlaceholder")}
+              rows={3}
+              {...register("notes")}
+            />
           </div>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>

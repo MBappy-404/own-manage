@@ -93,3 +93,129 @@ export function IncomeExpenseArea({
     </div>
   );
 }
+
+export function ExpenseTrendArea({
+  data,
+  name = "Expense",
+}: {
+  data: { label: string; total: number }[];
+  name?: string;
+}) {
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  React.useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  return (
+    <div className="h-64 w-full">
+      <ResponsiveContainer>
+        <ReAreaChart data={data} margin={{ top: 10, right: 8, bottom: 30, left: -20 }}>
+          <defs>
+            <linearGradient id="g-expense-trend" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="hsl(var(--destructive))" stopOpacity={0.45} />
+              <stop offset="100%" stopColor="hsl(var(--destructive))" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+          <XAxis
+            dataKey="label"
+            stroke="hsl(var(--muted-foreground))"
+            fontSize={9}
+            tickLine={false}
+            axisLine={false}
+            minTickGap={isMobile ? 10 : 0}
+            interval={isMobile ? 1 : 0}
+            tickFormatter={(v) => (isMobile ? v.split(" ")[0] : v)}
+            angle={isMobile ? 0 : -45}
+            textAnchor={isMobile ? "middle" : "end"}
+            height={isMobile ? 30 : 60}
+          />
+          <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} />
+          <Tooltip
+            contentStyle={{
+              background: "hsl(var(--popover))",
+              border: "1px solid hsl(var(--border))",
+              borderRadius: 8,
+              fontSize: 12,
+            }}
+          />
+          <Area
+            type="monotone"
+            dataKey="total"
+            name={name}
+            stroke="hsl(var(--destructive))"
+            strokeWidth={2}
+            fill="url(#g-expense-trend)"
+          />
+        </ReAreaChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+export function IncomeTrendArea({
+  data,
+  name = "Income",
+}: {
+  data: { label: string; total: number }[];
+  name?: string;
+}) {
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  React.useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  return (
+    <div className="h-64 w-full">
+      <ResponsiveContainer>
+        <ReAreaChart data={data} margin={{ top: 10, right: 8, bottom: 30, left: -20 }}>
+          <defs>
+            <linearGradient id="g-income-trend" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="hsl(var(--success))" stopOpacity={0.45} />
+              <stop offset="100%" stopColor="hsl(var(--success))" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+          <XAxis
+            dataKey="label"
+            stroke="hsl(var(--muted-foreground))"
+            fontSize={9}
+            tickLine={false}
+            axisLine={false}
+            minTickGap={isMobile ? 10 : 0}
+            interval={isMobile ? 1 : 0}
+            tickFormatter={(v) => (isMobile ? v.split(" ")[0] : v)}
+            angle={isMobile ? 0 : -45}
+            textAnchor={isMobile ? "middle" : "end"}
+            height={isMobile ? 30 : 60}
+          />
+          <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} />
+          <Tooltip
+            contentStyle={{
+              background: "hsl(var(--popover))",
+              border: "1px solid hsl(var(--border))",
+              borderRadius: 8,
+              fontSize: 12,
+            }}
+          />
+          <Area
+            type="monotone"
+            dataKey="total"
+            name={name}
+            stroke="hsl(var(--success))"
+            strokeWidth={2}
+            fill="url(#g-income-trend)"
+          />
+        </ReAreaChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}

@@ -11,16 +11,35 @@ export default async function DebtsPage() {
     orderBy: { createdAt: "desc" },
   });
 
+  const accounts = await prisma.financeAccount.findMany({
+    where: { userId: user.id },
+    orderBy: { name: "asc" },
+  });
+
   // Serialize for Client Component (Plain objects only)
   const serializedDebts = debts.map(d => ({
     id: d.id,
     personName: d.personName,
     amount: d.amount,
-    type: d.type,
-    status: d.status,
+    type: d.type as "GIVEN" | "TAKEN",
+    status: d.status as "PENDING" | "PAID",
     dueDate: d.dueDate ? d.dueDate.toISOString() : null,
     notes: d.notes,
+    financeAccountId: d.financeAccountId,
   }));
 
-  return <DebtsClient initial={serializedDebts} currency={user.currency} />;
+  const serializedAccounts = accounts.map(a => ({
+    id: a.id,
+    name: a.name,
+    balance: a.balance,
+    currency: a.currency,
+  }));
+
+  return (
+    <DebtsClient
+      initial={serializedDebts}
+      accounts={serializedAccounts}
+      currency={user.currency}
+    />
+  );
 }

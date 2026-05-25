@@ -23,8 +23,10 @@ import {
 } from "@/components/ui/dialog";
 import { savingsGoalSchema, type SavingsGoalInput } from "@/lib/validations";
 import { formatDate } from "@/lib/utils";
+import { useRouter } from "next/navigation";
 import { smartFetch } from "@/lib/sync";
 import { useI18n } from "@/lib/i18n/provider";
+import { useSyncedState } from "@/hooks/use-synced-state";
 import { CurrencyValue } from "@/components/ui/currency-value";
 import { ConfirmModal } from "@/components/shared/confirm-modal";
 
@@ -45,7 +47,8 @@ export function SavingsClient({
   currency: string;
 }) {
   const { t } = useI18n();
-  const [items, setItems] = React.useState<Goal[]>(initial);
+  const router = useRouter();
+  const [items, setItems] = useSyncedState<Goal[]>(initial);
   const [open, setOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<Goal | null>(null);
   const [confirmOpen, setConfirmOpen] = React.useState(false);
@@ -56,6 +59,7 @@ export function SavingsClient({
     const res = await smartFetch("/api/savings-goals", { method: "GET" });
     const data = await res.json();
     setItems(data.goals);
+    router.refresh();
   }
 
   function handleDelete(id: string) {

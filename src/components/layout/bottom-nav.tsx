@@ -9,6 +9,8 @@ import {
   TrendingDown,
   TrendingUp,
   Trophy,
+  BookOpen,
+  MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n/provider";
@@ -20,7 +22,9 @@ const items = [
   { href: "/income", labelKey: "nav.income", icon: TrendingUp },
   { href: "/expenses", labelKey: "nav.expenses", icon: TrendingDown },
   { href: "/insights", labelKey: "nav.insights", icon: Brain },
-  { href: "/leaderboard", labelKey: "nav.ranks", icon: Trophy, adminOnly: true },
+  { href: "/guide", labelKey: "nav.guide", icon: BookOpen, userOnly: true },
+  { href: "/feedback", labelKey: "nav.feedback", icon: MessageSquare },
+  { href: "/leaderboard", labelKey: "nav.adminHub", icon: Trophy, adminOnly: true },
 ];
 
 interface BottomNavProps {
@@ -36,15 +40,16 @@ export function BottomNav({ onMenuClick }: BottomNavProps) {
 
   const filteredItems = items.filter((item) => {
     if (item.adminOnly && !isAdmin) return false;
+    if (item.userOnly && isAdmin) return false;
     return true;
   });
 
   return (
     <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t bg-card/85 backdrop-blur-xl safe-bottom">
-      <ul className={cn(
-        "grid",
-        filteredItems.length === 5 ? "grid-cols-6" : "grid-cols-5"
-      )}>
+      <ul 
+        className="grid"
+        style={{ gridTemplateColumns: `repeat(${filteredItems.length + 1}, minmax(0, 1fr))` }}
+      >
         {/* Menu Button */}
         <li className="flex">
           <button
@@ -54,7 +59,7 @@ export function BottomNav({ onMenuClick }: BottomNavProps) {
             aria-label="Open menu"
           >
             <Menu className="w-5 h-5" />
-            Menu
+            {t("common.menu")}
           </button>
         </li>
 

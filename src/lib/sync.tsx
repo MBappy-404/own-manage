@@ -73,5 +73,8 @@ export async function smartFetch(url: string, options: RequestInit = {}) {
     });
     return { ok: true, status: 200, json: async () => ({ offline: true }) } as Response;
   }
-  return fetch(url, options);
+  return fetch(url, {
+    ...options,
+    cache: options.cache ?? "no-store",
+  });
 }

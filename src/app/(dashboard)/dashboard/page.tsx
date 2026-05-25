@@ -1,6 +1,6 @@
 import Link from "next/link";
 import * as React from "react";
-import { ArrowRight, Sparkles, Trophy } from "lucide-react";
+import { ArrowRight, Sparkles, Trophy, BookOpen } from "lucide-react";
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
@@ -95,6 +95,25 @@ export default async function DashboardPage() {
   const peakDay = highestSpendingDay(expenses);
   const bestMonth = bestEarningMonth(incomes);
 
+  // Calculate active months for overall average monthly income and expenses
+  const allTransactionDates = [...incomes, ...expenses].map((item) => new Date(item.date).getTime());
+  const oldestTxDate = allTransactionDates.length > 0 ? new Date(Math.min(...allTransactionDates)) : now;
+  const activeMonths = Math.max(
+    1,
+    (now.getFullYear() - oldestTxDate.getFullYear()) * 12 + (now.getMonth() - oldestTxDate.getMonth()) + 1
+  );
+
+  const avgMonthlyIncome = totalIncome / activeMonths;
+  const avgMonthlyExpense = totalExpense / activeMonths;
+
+  // Calculate active days with transactions (onboarding guide trigger)
+  const uniqueTxDays = new Set([
+    ...incomes.map((i) => i.date.toISOString().split("T")[0]),
+    ...expenses.map((e) => e.date.toISOString().split("T")[0]),
+  ]);
+  const daysWithData = uniqueTxDays.size;
+  const showOnboardingGuide = daysWithData < 5 && session.user.email !== "sadikulsad0810@gmail.com";
+
   const recentTransactions = [
     ...incomes.slice(0, 4).map((i) => ({
       id: i.id,
@@ -159,6 +178,36 @@ export default async function DashboardPage() {
         />
       </header>
 
+      {showOnboardingGuide && (
+        <div className="animate-in fade-in slide-in-from-top-3 duration-500">
+          <Link href="/guide" className="block group">
+            <Card className="border-none bg-premium-gradient text-white shadow-lg overflow-hidden relative transition-all duration-300 hover:shadow-xl hover:scale-[1.01]">
+              <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
+                <BookOpen className="w-32 h-32 -mr-6 -mt-6" />
+              </div>
+              <CardContent className="p-5 sm:p-6 relative z-10 flex items-center justify-between gap-6">
+                <div className="space-y-2">
+                  <h3 className="font-extrabold text-base sm:text-lg flex items-center gap-2 text-white drop-shadow-sm">
+                    <Sparkles className="w-4.5 h-4.5 text-accent animate-pulse" />
+                    {t("dashboard.onboardingTitle")}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-white/95 max-w-3xl leading-relaxed font-medium">
+                    {t("dashboard.onboardingDesc")}
+                  </p>
+                </div>
+                <Button 
+                  size="default" 
+                  className="bg-white text-primary hover:bg-white/90 shrink-0 text-xs sm:text-sm font-bold px-4 py-2 rounded-2xl shadow-md hidden sm:inline-flex items-center gap-1.5 transition-all group-hover:scale-105"
+                >
+                  {t("dashboard.onboardingCTA")}
+                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                </Button>
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
+      )}
+
       <section className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
         <StatCard
           label={t("dashboard.totalBalance")}
@@ -185,6 +234,7 @@ export default async function DashboardPage() {
           icon="TrendingUp"
           variant="success"
           trend={percentChange(monthInc, lastInc)}
+          hint={`${t("dashboard.monthlyAverageIncome")}: ${formatCurrency(avgMonthlyIncome, currency, locale)}`}
           delay={0.1}
         />
         <StatCard
@@ -194,6 +244,7 @@ export default async function DashboardPage() {
           icon="TrendingDown"
           variant="destructive"
           trend={percentChange(monthExp, lastExp)}
+          hint={`${t("dashboard.monthlyAverageExpense")}: ${formatCurrency(avgMonthlyExpense, currency, locale)}`}
           delay={0.15}
         />
         <StatCard
@@ -309,6 +360,14 @@ export default async function DashboardPage() {
             <Highlight
               label={t("dashboard.lifetimeExpense")}
               primary={<CurrencyValue value={totalExpense} currency={currency} />}
+            />
+            <Highlight
+              label={t("dashboard.avgMonthlyEarn")}
+              primary={<CurrencyValue value={avgMonthlyIncome} currency={currency} />}
+            />
+            <Highlight
+              label={t("dashboard.avgMonthlySpend")}
+              primary={<CurrencyValue value={avgMonthlyExpense} currency={currency} />}
             />
             {session.user.email === "sadikulsad0810@gmail.com" && (
               <Button asChild variant="ghost" size="sm" className="w-full mt-1">

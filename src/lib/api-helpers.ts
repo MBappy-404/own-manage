@@ -13,8 +13,17 @@ export async function requireUser() {
   return { error: null, user: session.user };
 }
 
+const NO_STORE_HEADERS = {
+  "Cache-Control": "private, no-store, no-cache, must-revalidate",
+  Pragma: "no-cache",
+} as const;
+
 export function ok<T>(data: T, init?: ResponseInit) {
-  return NextResponse.json(data, init);
+  const headers = new Headers(init?.headers);
+  for (const [key, value] of Object.entries(NO_STORE_HEADERS)) {
+    headers.set(key, value);
+  }
+  return NextResponse.json(data, { ...init, headers });
 }
 
 export function fail(message: string, status = 400) {

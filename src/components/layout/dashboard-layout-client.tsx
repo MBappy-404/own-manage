@@ -4,6 +4,7 @@ import * as React from "react";
 import { TopBar } from "@/components/layout/top-bar";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { MobileSidebar } from "@/components/layout/mobile-sidebar";
+import { NotificationListener } from "@/components/layout/notification-listener";
 
 interface DashboardLayoutClientProps {
   children: React.ReactNode;
@@ -18,12 +19,13 @@ export function DashboardLayoutClient({ children, user }: DashboardLayoutClientP
 
   return (
     <>
-      <TopBar user={user} onMenuClick={handleOpen} />
+      <TopBar user={user} />
       <main className="flex-1 pb-24 md:pb-8">
         <div className="container max-w-[1400px] py-4 md:py-8">{children}</div>
       </main>
       <BottomNav onMenuClick={handleOpen} />
       <MobileSidebar isOpen={sidebarOpen} onClose={handleClose} />
+      <NotificationListener />
     </>
   );
 }

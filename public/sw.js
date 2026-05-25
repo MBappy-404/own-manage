@@ -1,7 +1,6 @@
-/* OwnManage PWA service worker */
-const VERSION = "v1";
+/* OwnManage PWA service worker — static assets only; API/data always fresh */
+const VERSION = "v2";
 const STATIC_CACHE = `ownmanage-static-${VERSION}`;
-const RUNTIME_CACHE = `ownmanage-runtime-${VERSION}`;
 
 const PRECACHE_URLS = [
   "/",
@@ -20,11 +19,7 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(
-        keys
-          .filter((k) => k !== STATIC_CACHE && k !== RUNTIME_CACHE)
-          .map((k) => caches.delete(k)),
-      ),
+      Promise.all(keys.filter((k) => k !== STATIC_CACHE).map((k) => caches.delete(k))),
     ),
   );
   self.clients.claim();
@@ -34,50 +29,31 @@ self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Stale-while-revalidate for API GET requests
-  if (url.pathname.startsWith("/api") && request.method === "GET") {
-    event.respondWith(
-      caches.match(request).then((cached) => {
-        const fetchPromise = fetch(request)
-          .then((res) => {
-            const copy = res.clone();
-            caches.open(RUNTIME_CACHE).then((c) => c.put(request, copy));
-            return res;
-          })
-          .catch(() => null);
-        return cached || fetchPromise;
-      }),
-    );
+  // API & Next.js payloads: never cache — always network
+  if (
+    url.pathname.startsWith("/api") ||
+    url.pathname.startsWith("/_next") ||
+    request.method !== "GET"
+  ) {
     return;
   }
 
-  // Skip non-GET API requests
-  if (url.pathname.startsWith("/api") || url.pathname.startsWith("/_next/data")) {
-    return;
-  }
-
-  // Network-first with fast timeout for navigation
+  // Document navigation: network only (no stale HTML/RSC)
   if (request.mode === "navigate") {
     event.respondWith(
-      fetch(request)
-        .then((res) => {
-          const copy = res.clone();
-          caches.open(RUNTIME_CACHE).then((c) => c.put(request, copy));
-          return res;
-        })
-        .catch(() => caches.match(request).then((r) => r || caches.match("/"))),
+      fetch(request).catch(() => caches.match("/")),
     );
     return;
   }
 
-  // Cache-first for static assets
+  // Static assets (icons, fonts, images): cache-first
   event.respondWith(
     caches.match(request).then((cached) => {
       if (cached) return cached;
       return fetch(request).then((res) => {
         if (res && res.status === 200) {
           const copy = res.clone();
-          caches.open(RUNTIME_CACHE).then((c) => c.put(request, copy));
+          caches.open(STATIC_CACHE).then((c) => c.put(request, copy));
         }
         return res;
       });

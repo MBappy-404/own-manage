@@ -26,8 +26,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { financeAccountSchema, type FinanceAccountInput } from "@/lib/validations";
+import { useRouter } from "next/navigation";
 import { smartFetch } from "@/lib/sync";
 import { useI18n } from "@/lib/i18n/provider";
+import { useSyncedState } from "@/hooks/use-synced-state";
 import { CurrencyValue } from "@/components/ui/currency-value";
 import { ConfirmModal } from "@/components/shared/confirm-modal";
 
@@ -47,7 +49,8 @@ export function AccountsClient({
   currency: string;
 }) {
   const { t } = useI18n();
-  const [items, setItems] = React.useState<Account[]>(initial);
+  const router = useRouter();
+  const [items, setItems] = useSyncedState<Account[]>(initial);
   const [open, setOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<Account | null>(null);
   const [confirmOpen, setConfirmOpen] = React.useState(false);
@@ -58,6 +61,7 @@ export function AccountsClient({
     const res = await smartFetch("/api/finance-accounts", { method: "GET" });
     const data = await res.json();
     setItems(data.accounts);
+    router.refresh();
   }
 
   function handleDelete(id: string) {

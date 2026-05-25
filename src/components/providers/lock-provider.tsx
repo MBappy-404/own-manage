@@ -28,7 +28,7 @@ export function LockProvider({ children }: { children: React.ReactNode }) {
   // Fetch app password status
   React.useEffect(() => {
     if (status === "authenticated") {
-      fetch("/api/profile")
+      fetch("/api/profile", { cache: "no-store" })
         .then((res) => res.json())
         .then((data) => {
           if (data.profile?.appPassword) {

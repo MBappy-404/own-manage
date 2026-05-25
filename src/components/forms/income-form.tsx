@@ -8,7 +8,7 @@ import { Loader2 } from "lucide-react";
 import { format } from "date-fns";
 
 import { incomeSchema, type IncomeInput } from "@/lib/validations";
-import { INCOME_FREQUENCIES } from "@/lib/utils";
+import { INCOME_CATEGORIES, INCOME_FREQUENCIES } from "@/lib/utils";
 import { smartFetch } from "@/lib/sync";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,8 +56,6 @@ type Props = {
   onSaved: () => void;
 };
 
-const CATEGORIES = ["Salary", "Freelance", "Business", "Investment", "Bonus", "Gift", "Other"];
-
 export function IncomeFormDialog({ open, onOpenChange, initial, onSaved }: Props) {
   const { t } = useI18n();
   const editing = !!initial;
@@ -101,7 +99,7 @@ export function IncomeFormDialog({ open, onOpenChange, initial, onSaved }: Props
       reset({
         amount: initial.amount,
         source: initial.source,
-        category: initial.category,
+        category: initial.category as IncomeInput["category"],
         frequency: initial.frequency as IncomeInput["frequency"],
         date: new Date(initial.date),
         notes: initial.notes ?? "",
@@ -178,13 +176,13 @@ export function IncomeFormDialog({ open, onOpenChange, initial, onSaved }: Props
               <Label>{t("common.category")}</Label>
               <Select
                 value={category}
-                onValueChange={(v) => setValue("category", v)}
+                onValueChange={(v) => setValue("category", v as IncomeInput["category"])}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
-                  {CATEGORIES.map((c) => (
+                <SelectContent className="max-h-60">
+                  {INCOME_CATEGORIES.map((c) => (
                     <SelectItem key={c} value={c}>
                       {t(`incomeCategory.${c}`)}
                     </SelectItem>

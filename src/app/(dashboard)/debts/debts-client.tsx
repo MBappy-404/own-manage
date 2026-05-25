@@ -1,8 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { motion } from "framer-motion";
-import { Plus, Users, Pencil, Trash2, ArrowUpRight, ArrowDownLeft, Calendar, CheckCircle2 } from "lucide-react";
+import { Plus, Users, Pencil, Trash2, ArrowUpRight, ArrowDownLeft, Calendar, CheckCircle2, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -28,11 +27,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { debtSchema, type DebtInput } from "@/lib/validations";
+import { useRouter } from "next/navigation";
 import { smartFetch } from "@/lib/sync";
 import { useI18n } from "@/lib/i18n/provider";
+import { useSyncedState } from "@/hooks/use-synced-state";
 import { CurrencyValue } from "@/components/ui/currency-value";
 import { ConfirmModal } from "@/components/shared/confirm-modal";
-import { formatDate, cn } from "@/lib/utils";
+import { formatDate, cn, formatCurrency } from "@/lib/utils";
 
 type Debt = {
   id: string;
@@ -42,17 +43,30 @@ type Debt = {
   status: "PENDING" | "PAID";
   dueDate?: string | Date | null;
   notes?: string | null;
+  financeAccountId?: string | null;
 };
+
+type Account = {
+  id: string;
+  name: string;
+  balance: number;
+  currency: string;
+};
+
+const PAGE_SIZE = 20;
 
 export function DebtsClient({
   initial,
+  accounts = [],
   currency,
 }: {
   initial: Debt[];
+  accounts: Account[];
   currency: string;
 }) {
   const { t } = useI18n();
-  const [items, setItems] = React.useState<Debt[]>(initial);
+  const router = useRouter();
+  const [items, setItems] = useSyncedState<Debt[]>(initial);
   const [open, setOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<Debt | null>(null);
   const [confirmOpen, setConfirmOpen] = React.useState(false);
@@ -63,6 +77,7 @@ export function DebtsClient({
     const res = await smartFetch("/api/debts", { method: "GET" });
     const data = await res.json();
     setItems(data.debts);
+    router.refresh();
   }
 
   function handleDelete(id: string) {
@@ -98,6 +113,18 @@ export function DebtsClient({
       prev.map((d) => (d.id === debt.id ? { ...d, status: newStatus } : d))
     );
   }
+
+  const [page, setPage] = React.useState(1);
+
+  const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+
+  React.useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+
+  const paginated = items.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const rangeStart = items.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
+  const rangeEnd = Math.min(page * PAGE_SIZE, items.length);
 
   const totalGiven = items
     .filter((d) => d.type === "GIVEN" && d.status === "PENDING")
@@ -164,105 +191,165 @@ export function DebtsClient({
           <CardHeader>
             <CardTitle className="text-lg">{t("common.all")}</CardTitle>
           </CardHeader>
-          <CardContent className="px-0">
+          <CardContent className="p-0">
             {!items.length ? (
               <div className="py-12 text-center text-muted-foreground">
                 <Users className="w-12 h-12 mx-auto mb-4 opacity-10" />
                 <p>{t("debts.empty")}</p>
               </div>
             ) : (
-              <ul className="divide-y">
-                {items.map((debt, idx) => (
-                  <motion.li
-                    key={debt.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: idx * 0.02 }}
-                    className={cn(
-                      "flex items-center gap-4 px-6 py-4 hover:bg-accent/30 transition-colors",
-                      debt.status === "PAID" && "opacity-60 grayscale-[0.5]"
-                    )}
-                  >
-                    <div
-                      className={cn(
-                        "w-10 h-10 rounded-full flex items-center justify-center shrink-0",
-                        debt.type === "GIVEN"
-                          ? "bg-success/10 text-success"
-                          : "bg-destructive/10 text-destructive"
-                      )}
-                    >
-                      {debt.type === "GIVEN" ? (
-                        <ArrowUpRight className="w-5 h-5" />
-                      ) : (
-                        <ArrowDownLeft className="w-5 h-5" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="font-semibold truncate">{debt.personName}</p>
-                        <Badge
-                          variant={debt.status === "PAID" ? "success" : "secondary"}
-                          className="text-[10px]"
-                        >
-                          {debt.status === "PAID" ? t("debts.paid") : t("debts.pending")}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
-                        {debt.dueDate && (
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
-                            {formatDate(debt.dueDate)}
-                          </span>
-                        )}
-                        {debt.notes && (
-                          <span className="truncate max-w-[150px]">
-                            · {debt.notes}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left border-collapse min-w-[700px]">
+                  <thead>
+                    <tr className="border-b border-muted bg-muted/10 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      <th className="px-6 py-3.5">{t("debts.type")}</th>
+                      <th className="px-6 py-3.5">{t("debts.person")}</th>
+                      <th className="px-6 py-3.5">{t("debts.dueDate")}</th>
+                      <th className="px-6 py-3.5">{t("common.notes")}</th>
+                      <th className="px-6 py-3.5 text-right">{t("common.amount")}</th>
+                      <th className="px-6 py-3.5 text-center">{t("debts.status")}</th>
+                      <th className="px-6 py-3.5 text-right">{t("common.actions")}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-muted/30">
+                    {paginated.map((debt) => (
+                      <tr
+                        key={debt.id}
                         className={cn(
-                          "font-bold tabular-nums",
-                          debt.type === "GIVEN" ? "text-success" : "text-destructive"
+                          "hover:bg-accent/10 transition-colors align-middle",
+                          debt.status === "PAID" && "opacity-60 grayscale-[0.3]"
                         )}
                       >
-                        {debt.type === "GIVEN" ? "+" : "-"}
-                        <CurrencyValue value={debt.amount} currency={currency} />
-                      </p>
-                    </div>
-                    <div className="flex gap-1 ml-2">
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => toggleStatus(debt)}
-                        className={debt.status === "PAID" ? "text-success" : ""}
-                        title={debt.status === "PAID" ? "Mark as Pending" : "Mark as Paid"}
-                      >
-                        <CheckCircle2 className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => {
-                          setEditing(debt);
-                          setOpen(true);
-                        }}
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => handleDelete(debt.id)}
-                      >
-                        <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                      </Button>
-                    </div>
-                  </motion.li>
-                ))}
-              </ul>
+                        <td className="px-6 py-4">
+                          <div
+                            className={cn(
+                              "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
+                              debt.type === "GIVEN"
+                                ? "bg-success/10 text-success"
+                                : "bg-destructive/10 text-destructive"
+                            )}
+                          >
+                            {debt.type === "GIVEN" ? (
+                              <ArrowUpRight className="w-4.5 h-4.5" />
+                            ) : (
+                              <ArrowDownLeft className="w-4.5 h-4.5" />
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 font-semibold text-foreground">
+                          <div className="flex flex-col">
+                            <span>{debt.personName}</span>
+                            {debt.financeAccountId && (
+                              <div className="mt-0.5">
+                                <Badge variant="outline" className="text-[9px] px-1 py-0 border-muted text-muted-foreground font-normal">
+                                  {accounts.find(a => a.id === debt.financeAccountId)?.name || "Account"}
+                                </Badge>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-muted-foreground whitespace-nowrap">
+                          {debt.dueDate ? (
+                            <span className="flex items-center gap-1 text-xs">
+                              <Calendar className="w-3.5 h-3.5" />
+                              {formatDate(debt.dueDate)}
+                            </span>
+                          ) : (
+                            "—"
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-muted-foreground max-w-[180px] truncate text-xs">
+                          {debt.notes || "—"}
+                        </td>
+                        <td className="px-6 py-4 text-right font-bold tabular-nums text-sm">
+                          <span className={debt.type === "GIVEN" ? "text-success" : "text-destructive"}>
+                            {debt.type === "GIVEN" ? "+" : "-"}
+                            <CurrencyValue value={debt.amount} currency={currency} />
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <Badge
+                            variant={debt.status === "PAID" ? "success" : "secondary"}
+                            className="text-[10px] px-2 py-0.5"
+                          >
+                            {debt.status === "PAID" ? t("debts.paid") : t("debts.pending")}
+                          </Badge>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex justify-end gap-1">
+                            {debt.status !== "PAID" && (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  onClick={() => toggleStatus(debt)}
+                                  className="text-muted-foreground hover:text-success"
+                                  title="Mark as Paid"
+                                >
+                                  <CheckCircle2 className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  onClick={() => {
+                                    setEditing(debt);
+                                    setOpen(true);
+                                  }}
+                                  title="Edit"
+                                >
+                                  <Pencil className="w-3.5 h-3.5" />
+                                </Button>
+                              </>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={() => handleDelete(debt.id)}
+                              title="Delete"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            {items.length > PAGE_SIZE && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-6 py-4 border-t">
+                <p className="text-xs text-muted-foreground">
+                  {t("common.paginationShowing", {
+                    from: rangeStart,
+                    to: rangeEnd,
+                    total: items.length,
+                  })}
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page <= 1}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    {t("common.prev")}
+                  </Button>
+                  <span className="text-xs font-medium tabular-nums px-2">
+                    {t("common.paginationPage", { page, total: totalPages })}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page >= totalPages}
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  >
+                    {t("common.next")}
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -272,6 +359,7 @@ export function DebtsClient({
         open={open}
         onOpenChange={setOpen}
         initial={editing}
+        accounts={accounts}
         onSaved={refresh}
       />
 
@@ -290,14 +378,16 @@ function DebtDialog({
   open,
   onOpenChange,
   initial,
+  accounts,
   onSaved,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   initial: Debt | null;
+  accounts: Account[];
   onSaved: () => void;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const editing = !!initial;
   const {
     register,
@@ -314,6 +404,8 @@ function DebtDialog({
       type: "GIVEN",
       status: "PENDING",
       notes: "",
+      financeAccountId: "",
+      dueDate: new Date(),
     },
   });
 
@@ -326,6 +418,7 @@ function DebtDialog({
         status: initial.status,
         dueDate: initial.dueDate ? new Date(initial.dueDate) : null,
         notes: initial.notes ?? "",
+        financeAccountId: initial.financeAccountId ?? "",
       });
     } else if (open) {
       reset({
@@ -333,14 +426,16 @@ function DebtDialog({
         amount: 0,
         type: "GIVEN",
         status: "PENDING",
-        dueDate: null,
+        dueDate: new Date(),
         notes: "",
+        financeAccountId: "",
       });
     }
   }, [initial, open, reset]);
 
   const typeValue = watch("type");
   const dueDateValue = watch("dueDate");
+  const financeAccountIdValue = watch("financeAccountId");
 
   async function onSubmit(values: DebtInput) {
     const url = editing ? `/api/debts/${initial!.id}` : "/api/debts";
@@ -348,7 +443,10 @@ function DebtDialog({
     const res = await smartFetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(values),
+      body: JSON.stringify({
+        ...values,
+        financeAccountId: values.financeAccountId || null,
+      }),
     });
     if (!res.ok) return toast.error(t("settings.updateFailed"));
     toast.success(editing ? t("common.saveChanges") : t("common.save"));
@@ -413,6 +511,25 @@ function DebtDialog({
                 setValue("dueDate", e.target.value ? new Date(e.target.value) : null)
               }
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="financeAccountId">{t("accounts.title")} ({t("common.optional")})</Label>
+            <Select
+              value={financeAccountIdValue || "none"}
+              onValueChange={(v: string) => setValue("financeAccountId", v === "none" ? "" : v)}
+            >
+              <SelectTrigger id="financeAccountId">
+                <SelectValue placeholder={t("common.none")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">{t("common.none")}</SelectItem>
+                {accounts.map((acc) => (
+                  <SelectItem key={acc.id} value={acc.id}>
+                    {acc.name} ({formatCurrency(acc.balance, acc.currency, locale)})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2">
             <Label htmlFor="notes">{t("common.notes")}</Label>

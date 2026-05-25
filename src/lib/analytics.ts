@@ -58,7 +58,18 @@ export function filterByInterval<T extends { date: DateLike }>(
 export function buildDailySeries(items: { amount: number; date: DateLike }[], days = 30) {
   const end = endOfDay(new Date());
   const start = startOfDay(subDays(end, days - 1));
-  const buckets = eachDayOfInterval({ start, end }).map((d) => ({
+  return buildDailySeriesInInterval(items, start, end);
+}
+
+export function buildDailySeriesInInterval(
+  items: { amount: number; date: DateLike }[],
+  start: Date,
+  end: Date,
+) {
+  const rangeStart = startOfDay(start);
+  const rangeEnd = endOfDay(end);
+  if (rangeStart > rangeEnd) return [];
+  const buckets = eachDayOfInterval({ start: rangeStart, end: rangeEnd }).map((d) => ({
     date: format(d, "yyyy-MM-dd"),
     label: format(d, "d MMM"),
     total: 0,
@@ -69,6 +80,14 @@ export function buildDailySeries(items: { amount: number; date: DateLike }[], da
     if (b) b.total += it.amount;
   }
   return buckets;
+}
+
+/** Day-by-day totals from the 1st through today in the given month. */
+export function buildCurrentMonthDailySeries(
+  items: { amount: number; date: DateLike }[],
+  ref: Date = new Date(),
+) {
+  return buildDailySeriesInInterval(items, startOfMonth(ref), endOfDay(ref));
 }
 
 export function buildMonthlySeries(

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, PAYMENT_METHODS } from "@/lib/utils";
 
 export const registerSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").max(80),
@@ -26,7 +27,7 @@ export const resetPasswordSchema = z.object({
 export const incomeSchema = z.object({
   amount: z.coerce.number().positive("Amount must be greater than 0"),
   source: z.string().min(1, "Source is required").max(80),
-  category: z.string().min(1).max(40).default("Salary"),
+  category: z.enum(INCOME_CATEGORIES).default("Salary"),
   frequency: z.enum(["ONE_TIME", "DAILY", "WEEKLY", "MONTHLY", "YEARLY"]).default("ONE_TIME"),
   date: z.coerce.date(),
   notes: z.string().max(500).optional().or(z.literal("")),
@@ -35,35 +36,8 @@ export const incomeSchema = z.object({
 
 export const expenseSchema = z.object({
   amount: z.coerce.number().positive("Amount must be greater than 0"),
-  category: z.enum([
-    "FOOD",
-    "SHOPPING",
-    "GROCERIES",
-    "DINING",
-    "BILLS",
-    "TRAVEL",
-    "ENTERTAINMENT",
-    "EDUCATION",
-    "MEDICAL",
-    "HOUSING",
-    "TRANSPORT",
-    "TOYS",
-    "ELECTRONICS",
-    "PERSONAL_CARE",
-    "GIFTS",
-    "INSURANCE",
-    "MAINTENANCE",
-    "CLOTHING",
-    "SUBSCRIPTIONS",
-    "OTHERS",
-  ]),
-  paymentMethod: z.enum([
-    "CASH",
-    "CARD",
-    "BANK_TRANSFER",
-    "MOBILE_PAYMENT",
-    "OTHER",
-  ]).default("CASH"),
+  category: z.enum(EXPENSE_CATEGORIES),
+  paymentMethod: z.enum(PAYMENT_METHODS).default("CASH"),
   date: z.coerce.date(),
   notes: z.string().max(500).optional().or(z.literal("")),
   merchant: z.string().max(80).optional().or(z.literal("")),
@@ -99,6 +73,7 @@ export const debtSchema = z.object({
   dueDate: z.coerce.date().optional().nullable(),
   status: z.enum(["PENDING", "PAID"]).default("PENDING"),
   notes: z.string().max(500).optional().or(z.literal("")),
+  financeAccountId: z.string().optional().nullable(),
 });
 
 export type RegisterInput = z.infer<typeof registerSchema>;

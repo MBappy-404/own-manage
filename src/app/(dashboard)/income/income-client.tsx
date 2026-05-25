@@ -20,14 +20,15 @@ import { CurrencyValue } from "@/components/ui/currency-value";
 import { ConfirmModal } from "@/components/shared/confirm-modal";
 import {
   sumAmount,
-  buildMonthlySeries,
   highestIncomeDay,
   bestEarningMonth,
   periodInterval,
   filterByInterval,
 } from "@/lib/analytics";
+import { useRouter } from "next/navigation";
 import { smartFetch } from "@/lib/sync";
-import { IncomeExpenseArea } from "@/components/charts/area-chart";
+import { useSyncedState } from "@/hooks/use-synced-state";
+import { IncomeTrendChart } from "./income-trend-chart";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { useI18n } from "@/lib/i18n/provider";
 
@@ -49,7 +50,8 @@ export function IncomeClient({
   currency: string;
 }) {
   const { t } = useI18n();
-  const [items, setItems] = React.useState<IncomeItem[]>(initial);
+  const router = useRouter();
+  const [items, setItems] = useSyncedState<IncomeItem[]>(initial);
   const [open, setOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<IncomeItem | null>(null);
   const [search, setSearch] = React.useState("");
@@ -61,6 +63,7 @@ export function IncomeClient({
     const res = await smartFetch("/api/income", { method: "GET" });
     const data = await res.json();
     setItems(data.incomes);
+    router.refresh();
   }
 
   function handleDelete(id: string) {
@@ -79,6 +82,7 @@ export function IncomeClient({
       }
       toast.success(t("income.deleted"));
       setItems((prev) => prev.filter((i) => i.id !== deletingId));
+      router.refresh();
       setConfirmOpen(false);
     } finally {
       setIsDeleting(false);
@@ -98,8 +102,6 @@ export function IncomeClient({
   const monthTotal = sumAmount(filterByInterval(incomesWithDate, month.start, month.end));
   const weekTotal = sumAmount(filterByInterval(incomesWithDate, week.start, week.end));
   const dayTotal = sumAmount(filterByInterval(incomesWithDate, day.start, day.end));
-  const monthlySeries = buildMonthlySeries(incomesWithDate, 8);
-  const emptySeries = monthlySeries.map((m) => ({ label: m.label, total: 0 }));
   const peak = highestIncomeDay(incomesWithDate);
   const best = bestEarningMonth(incomesWithDate);
 
@@ -135,15 +137,7 @@ export function IncomeClient({
       </section>
 
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <Card className="lg:col-span-2">
-          <CardHeader className="pb-3">
-            <CardTitle>{t("income.trend")}</CardTitle>
-            <p className="text-xs text-muted-foreground">{t("dashboard.lastMonths", { n: 8 })}</p>
-          </CardHeader>
-          <CardContent>
-            <IncomeExpenseArea income={monthlySeries} expense={emptySeries} />
-          </CardContent>
-        </Card>
+        <IncomeTrendChart items={incomesWithDate} title={t("income.trend")} />
         <Card>
           <CardHeader className="pb-3">
             <CardTitle>{t("income.highlights")}</CardTitle>
