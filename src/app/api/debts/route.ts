@@ -1,8 +1,11 @@
 import type { NextRequest } from "next/server";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { debtSchema } from "@/lib/validations";
 import { fail, ok, requireUser } from "@/lib/api-helpers";
 import type { DebtType, DebtStatus } from "@prisma/client";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   const { error, user } = await requireUser();
@@ -24,7 +27,7 @@ export async function POST(req: NextRequest) {
   const parsed = debtSchema.safeParse(body);
   if (!parsed.success) return fail("Invalid input");
 
-  const { personName, amount, type, dueDate, status, notes, financeAccountId } = parsed.data;
+  const { personName, amount, type, dueDate, status, notes, phone, financeAccountId } = parsed.data;
 
   const debt = await prisma.$transaction(async (tx) => {
     const newDebt = await tx.debt.create({
@@ -36,6 +39,7 @@ export async function POST(req: NextRequest) {
         status: status as DebtStatus,
         dueDate,
         notes: notes || null,
+        phone: phone || null,
         financeAccountId: financeAccountId || null,
       },
     });
@@ -57,5 +61,7 @@ export async function POST(req: NextRequest) {
     return newDebt;
   });
 
+  revalidatePath("/", "layout");
   return ok({ debt }, { status: 201 });
 }
+

@@ -3,6 +3,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { SettingsClient } from "./settings-client";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export const metadata = { title: "Settings" };
 
 export default async function SettingsPage() {
@@ -31,7 +34,7 @@ export default async function SettingsPage() {
       initial={{
         name: (profile?.name as string) ?? "",
         email: (profile?.email as string) ?? "",
-        currency: (profile?.currency as string) ?? "USD",
+        currency: (profile?.currency as string) ?? "BDT",
         monthlyBudget: (profile?.monthlyBudget as number) ?? null,
         appPassword: (profile?.appPassword as string) ?? null,
       }}

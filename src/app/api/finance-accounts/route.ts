@@ -1,7 +1,10 @@
 import type { NextRequest } from "next/server";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { financeAccountSchema } from "@/lib/validations";
 import { fail, ok, requireUser } from "@/lib/api-helpers";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   const { error, user } = await requireUser();
@@ -30,5 +33,7 @@ export async function POST(req: NextRequest) {
     },
   });
 
+  revalidatePath("/", "layout");
   return ok({ account });
 }
+

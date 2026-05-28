@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { debtSchema } from "@/lib/validations";
 import { fail, ok, requireUser } from "@/lib/api-helpers";
@@ -45,6 +46,7 @@ export async function PUT(
         ...(parsed.data.status !== undefined && { status: parsed.data.status as DebtStatus }),
         ...(parsed.data.dueDate !== undefined && { dueDate: parsed.data.dueDate }),
         ...(parsed.data.notes !== undefined && { notes: parsed.data.notes || null }),
+        ...(parsed.data.phone !== undefined && { phone: parsed.data.phone || null }),
         ...(parsed.data.financeAccountId !== undefined && {
           financeAccountId: parsed.data.financeAccountId || null,
         }),
@@ -69,6 +71,7 @@ export async function PUT(
     return updated;
   });
 
+  revalidatePath("/", "layout");
   return ok({ debt });
 }
 
@@ -101,5 +104,7 @@ export async function DELETE(
     await tx.debt.delete({ where: { id: params.id } });
   });
 
+  revalidatePath("/", "layout");
   return ok({ ok: true });
 }
+

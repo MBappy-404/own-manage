@@ -223,15 +223,15 @@ export function TopBar({ user }: Props) {
                     >
                       {getNotifIcon(notif.type)}
                       <div className="flex-1 min-w-0 space-y-0.5 pr-5">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="font-extrabold text-foreground truncate">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="font-extrabold text-foreground break-words">
                             {notif.title}
                           </p>
-                          <span className="text-[9px] text-muted-foreground shrink-0 font-medium group-hover/row:opacity-0 transition-opacity">
+                          <span className="text-[9px] text-muted-foreground shrink-0 font-medium group-hover/row:opacity-0 transition-opacity mt-0.5">
                             {formatNotifTime(notif.createdAt)}
                           </span>
                         </div>
-                        <p className="text-muted-foreground font-normal line-clamp-2">
+                        <p className="text-muted-foreground font-normal break-words whitespace-pre-line">
                           {notif.message}
                         </p>
                       </div>

@@ -55,11 +55,13 @@ export function BottomNav({ onMenuClick }: BottomNavProps) {
           <button
             type="button"
             onClick={onMenuClick}
-            className="flex-1 flex flex-col items-center gap-1 py-2 text-[10px] font-medium transition-colors text-muted-foreground hover:text-primary"
+            className="flex-1 flex flex-col items-center gap-1 py-2 text-[10px] font-medium transition-colors text-muted-foreground hover:text-primary min-w-0"
             aria-label="Open menu"
           >
-            <Menu className="w-5 h-5" />
-            {t("common.menu")}
+            <Menu className="w-5 h-5 flex-shrink-0" />
+            <span className="w-full text-center truncate px-0.5 block">
+              {t("common.menu")}
+            </span>
           </button>
         </li>
 
@@ -72,12 +74,14 @@ export function BottomNav({ onMenuClick }: BottomNavProps) {
               <Link
                 href={it.href}
                 className={cn(
-                  "flex-1 flex flex-col items-center gap-1 py-2 text-[10px] font-medium transition-colors",
+                  "flex-1 flex flex-col items-center gap-1 py-2 text-[10px] font-medium transition-colors min-w-0",
                   active ? "text-primary" : "text-muted-foreground",
                 )}
               >
-                <it.icon className="w-5 h-5" />
-                {t(it.labelKey)}
+                <it.icon className="w-5 h-5 flex-shrink-0" />
+                <span className="w-full text-center truncate px-0.5 block">
+                  {t(it.labelKey)}
+                </span>
               </Link>
             </li>
           );

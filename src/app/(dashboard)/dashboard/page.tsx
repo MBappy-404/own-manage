@@ -29,6 +29,9 @@ import { DashboardHeader } from "./dashboard-header";
 import { IncomeExpenseChart } from "./income-expense-chart";
 import { CurrencyValue } from "@/components/ui/currency-value";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export const metadata = { title: "Dashboard" };
 
 export default async function DashboardPage() {
@@ -39,7 +42,7 @@ export default async function DashboardPage() {
   }
 
   const userId = session.user.id;
-  const currency = session.user.currency || "USD";
+  const currency = session.user.currency || "BDT";
   const { t, locale } = getServerT();
 
   const [incomes, expenses, user, financeAccounts] = await Promise.all([

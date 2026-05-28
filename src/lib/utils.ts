@@ -7,7 +7,7 @@ export function cn(...inputs: ClassValue[]) {
 
 export function formatCurrency(
   amount: number,
-  currency: string = "USD",
+  currency: string = "BDT",
   locale: string = "en",
 ): string {
   const numberLocale = locale === "bn" ? "bn-BD" : "en-US";
@@ -27,7 +27,7 @@ export function formatCurrency(
 
 export function formatCompactCurrency(
   amount: number,
-  currency: string = "USD",
+  currency: string = "BDT",
   locale: string = "en",
 ): string {
   const numberLocale = locale === "bn" ? "bn-BD" : "en-US";

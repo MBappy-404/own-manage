@@ -35,6 +35,16 @@ import { CurrencyValue } from "@/components/ui/currency-value";
 import { ConfirmModal } from "@/components/shared/confirm-modal";
 import { formatDate, cn, formatCurrency } from "@/lib/utils";
 
+const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    {...props}
+  >
+    <path d="M12.012 2c-5.506 0-9.975 4.47-9.975 9.979 0 1.761.458 3.477 1.332 5.006L2 22l5.187-1.362A9.916 9.916 0 0012.008 22c5.507 0 9.977-4.47 9.977-9.979S17.518 2 12.012 2zm4.721 13.914c-.26.731-1.309 1.328-1.802 1.4-1.272.186-2.924-.316-4.577-2.179-1.92-2.164-2.827-4.225-2.827-5.597 0-1.077.581-1.636.969-2.029.215-.218.423-.271.609-.271.186 0 .344.009.49.018.15.009.344-.056.536.402.196.472.673 1.636.731 1.752.057.115.095.25.019.4-.076.15-.172.261-.287.394-.115.132-.249.278-.354.382-.125.122-.259.255-.112.507.147.253.654 1.076 1.403 1.745.965.862 1.776 1.13 2.029 1.258.252.129.401.109.553-.066.153-.175.654-.761.829-1.02.176-.259.349-.218.587-.129.239.09.1.181 1.517.887 1.417.706 1.474.773 1.551.905.076.132.076.76-.184 1.491z" />
+  </svg>
+);
+
 type Debt = {
   id: string;
   personName: string;
@@ -43,6 +53,7 @@ type Debt = {
   status: "PENDING" | "PAID";
   dueDate?: string | Date | null;
   notes?: string | null;
+  phone?: string | null;
   financeAccountId?: string | null;
 };
 
@@ -64,7 +75,7 @@ export function DebtsClient({
   accounts: Account[];
   currency: string;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const router = useRouter();
   const [items, setItems] = useSyncedState<Debt[]>(initial);
   const [open, setOpen] = React.useState(false);
@@ -79,6 +90,10 @@ export function DebtsClient({
     setItems(data.debts);
     router.refresh();
   }
+
+  React.useEffect(() => {
+    router.refresh();
+  }, [router]);
 
   function handleDelete(id: string) {
     setDeletingId(id);
@@ -239,13 +254,18 @@ export function DebtsClient({
                         <td className="px-6 py-4 font-semibold text-foreground">
                           <div className="flex flex-col">
                             <span>{debt.personName}</span>
-                            {debt.financeAccountId && (
-                              <div className="mt-0.5">
+                            <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                              {debt.phone && (
+                                <span className="text-[10px] text-muted-foreground font-normal">
+                                  📞 {debt.phone}
+                                </span>
+                              )}
+                              {debt.financeAccountId && (
                                 <Badge variant="outline" className="text-[9px] px-1 py-0 border-muted text-muted-foreground font-normal">
                                   {accounts.find(a => a.id === debt.financeAccountId)?.name || "Account"}
                                 </Badge>
-                              </div>
-                            )}
+                              )}
+                            </div>
                           </div>
                         </td>
                         <td className="px-6 py-4 text-muted-foreground whitespace-nowrap">
@@ -279,6 +299,29 @@ export function DebtsClient({
                           <div className="flex justify-end gap-1">
                             {debt.status !== "PAID" && (
                               <>
+                                {debt.phone && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon-sm"
+                                    className="text-success hover:text-success hover:bg-success/10"
+                                    title={locale === "bn" ? "হোয়াটসঅ্যাপে তাগাদা মেসেজ পাঠান" : "Send WhatsApp Reminder"}
+                                    onClick={() => {
+                                      const message = debt.type === "GIVEN"
+                                        ? (locale === "bn"
+                                            ? `আসসালামু আলাইকুম ${debt.personName}, OwnManage অ্যাপের হিসাব অনুযায়ী আপনার কাছে আমার ${debt.amount} ${currency} পাওনা আছে। অনুগ্রহ করে একটু চেক করবেন। ধন্যবাদ!`
+                                            : `Assalamu Alaikum ${debt.personName}, according to my OwnManage app, I am expecting a payment of ${debt.amount} ${currency} from you. Please check and let me know. Thanks!`)
+                                        : (locale === "bn"
+                                            ? `আসসালামু আলাইকুম ${debt.personName}, OwnManage অ্যাপের হিসাব অনুযায়ী আপনার কাছ থেকে নেওয়া আমার ${debt.amount} ${currency} দেনা পরিশোধের কথা মনে করিয়ে দিচ্ছি। খুব শীঘ্রই পরিশোধ করবো ইনশাআল্লাহ্‌।`
+                                            : `Assalamu Alaikum ${debt.personName}, just a reminder from my OwnManage app regarding the debt of ${debt.amount} ${currency} that I took from you. I will pay you back very soon, In Sha Allah.`);
+                                      
+                                      const cleanPhone = debt.phone!.replace(/[^\d+]/g, "");
+                                      const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+                                      window.open(url, "_blank");
+                                    }}
+                                  >
+                                    <WhatsAppIcon className="w-4.5 h-4.5" />
+                                  </Button>
+                                )}
                                 <Button
                                   variant="ghost"
                                   size="icon-sm"
@@ -404,6 +447,7 @@ function DebtDialog({
       type: "GIVEN",
       status: "PENDING",
       notes: "",
+      phone: "",
       financeAccountId: "",
       dueDate: new Date(),
     },
@@ -418,6 +462,7 @@ function DebtDialog({
         status: initial.status,
         dueDate: initial.dueDate ? new Date(initial.dueDate) : null,
         notes: initial.notes ?? "",
+        phone: initial.phone ?? "",
         financeAccountId: initial.financeAccountId ?? "",
       });
     } else if (open) {
@@ -428,6 +473,7 @@ function DebtDialog({
         status: "PENDING",
         dueDate: new Date(),
         notes: "",
+        phone: "",
         financeAccountId: "",
       });
     }
@@ -510,6 +556,15 @@ function DebtDialog({
               onChange={(e) =>
                 setValue("dueDate", e.target.value ? new Date(e.target.value) : null)
               }
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="phone">{locale === "bn" ? "ফোন নম্বর (WhatsApp)" : "Phone Number (WhatsApp)"}</Label>
+            <Input
+              id="phone"
+              type="text"
+              placeholder="e.g. +8801700000000"
+              {...register("phone")}
             />
           </div>
           <div className="space-y-2">

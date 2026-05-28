@@ -1,8 +1,11 @@
 import type { NextRequest } from "next/server";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { expenseSchema } from "@/lib/validations";
 import { fail, ok, requireUser } from "@/lib/api-helpers";
 import type { PaymentMethod, Prisma } from "@prisma/client";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   const { error, user } = await requireUser();
@@ -74,5 +77,7 @@ export async function POST(req: NextRequest) {
     return newExpense;
   });
 
+  revalidatePath("/", "layout");
   return ok({ expense }, { status: 201 });
 }
+

@@ -33,13 +33,16 @@ import { formatCurrency } from "@/lib/utils";
 import { AISummaryCard } from "@/components/dashboard/ai-summary-card";
 import { getDate, getDaysInMonth } from "date-fns";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export const metadata = { title: "AI Insights" };
 
 export default async function InsightsPage() {
   const session = await getServerSession(authOptions);
   if (!session?.user) return null;
   const userId = session.user.id;
-  const currency = session.user.currency || "USD";
+  const currency = session.user.currency || "BDT";
   const { t, locale } = getServerT();
 
   const [incomes, expenses, profile] = await Promise.all([

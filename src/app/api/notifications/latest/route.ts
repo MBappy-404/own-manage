@@ -1,6 +1,9 @@
 import { NextRequest } from "next/server";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { ok, fail, requireUser } from "@/lib/api-helpers";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   const { error, user } = await requireUser();
@@ -39,6 +42,7 @@ export async function PATCH(req: NextRequest) {
       },
     });
 
+    revalidatePath("/", "layout");
     return ok({ success: true });
   } catch (err) {
     console.error("Update notifications error:", err);
@@ -65,9 +69,12 @@ export async function DELETE(req: NextRequest) {
         where: { userId: user.id },
       });
     }
+
+    revalidatePath("/", "layout");
     return ok({ success: true });
   } catch (err) {
     console.error("Delete notification error:", err);
     return fail("Failed to delete notification", 500);
   }
 }
+

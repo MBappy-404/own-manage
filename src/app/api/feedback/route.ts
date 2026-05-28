@@ -1,6 +1,9 @@
 import { NextRequest } from "next/server";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { ok, fail, requireUser } from "@/lib/api-helpers";
+
+export const dynamic = "force-dynamic";
 
 const ADMIN_EMAIL = "sadikulsad0810@gmail.com";
 
@@ -22,9 +25,11 @@ export async function POST(req: NextRequest) {
         email: user.email ?? "",
         message,
         rating: rateValue,
+        status: "PENDING",
       },
     });
 
+    revalidatePath("/", "layout");
     return ok(feedback);
   } catch (err) {
     console.error("Feedback creation error:", err);
@@ -36,17 +41,23 @@ export async function GET() {
   const { error, user } = await requireUser();
   if (error) return error;
 
-  if (user.email !== ADMIN_EMAIL) {
-    return fail("Unauthorized", 403);
-  }
-
   try {
-    const feedbacks = await prisma.feedback.findMany({
-      orderBy: { createdAt: "desc" },
-    });
-    return ok(feedbacks);
+    if (user.email === ADMIN_EMAIL) {
+      const feedbacks = await prisma.feedback.findMany({
+        orderBy: { createdAt: "desc" },
+      });
+      return ok(feedbacks);
+    } else {
+      const feedbacks = await prisma.feedback.findMany({
+        where: { userId: user.id },
+        orderBy: { createdAt: "desc" },
+      });
+      return ok(feedbacks);
+    }
   } catch (err) {
     console.error("Feedback fetch error:", err);
     return fail("Failed to fetch feedbacks", 500);
   }
 }
+
+

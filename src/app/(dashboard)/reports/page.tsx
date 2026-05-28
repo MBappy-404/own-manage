@@ -3,6 +3,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { ReportsClient } from "./reports-client";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export const metadata = { title: "Reports" };
 
 export default async function ReportsPage() {
@@ -17,7 +20,7 @@ export default async function ReportsPage() {
     <ReportsClient
       incomes={incomes.map((i) => ({ ...i, date: i.date.toISOString() }))}
       expenses={expenses.map((e) => ({ ...e, date: e.date.toISOString() }))}
-      currency={session.user.currency || "USD"}
+      currency={session.user.currency || "BDT"}
       userName={session.user.name ?? "User"}
     />
   );

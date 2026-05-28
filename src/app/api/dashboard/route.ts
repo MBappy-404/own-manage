@@ -18,6 +18,8 @@ import { generateInsights } from "@/lib/insights";
 import { getServerT } from "@/lib/i18n/server";
 import { ok, requireUser } from "@/lib/api-helpers";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const { error, user } = await requireUser();
   if (error) return error;

@@ -1,7 +1,10 @@
 import { NextRequest } from "next/server";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { profileSchema } from "@/lib/validations";
 import { fail, ok, requireUser } from "@/lib/api-helpers";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   const { error, user } = await requireUser();
@@ -73,5 +76,8 @@ export async function PUT(req: NextRequest) {
   }) as Record<string, unknown>[];
   
   const profile = profiles[0] || null;
+
+  revalidatePath("/", "layout");
   return ok({ profile });
 }
+

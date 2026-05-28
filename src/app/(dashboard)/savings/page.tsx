@@ -3,6 +3,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { SavingsClient } from "./savings-client";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export const metadata = { title: "Savings goals" };
 
 export default async function SavingsPage() {
@@ -21,7 +24,7 @@ export default async function SavingsPage() {
         createdAt: g.createdAt.toISOString(),
         updatedAt: g.updatedAt.toISOString(),
       }))}
-      currency={session.user.currency || "USD"}
+      currency={session.user.currency || "BDT"}
     />
   );
 }

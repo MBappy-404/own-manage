@@ -59,6 +59,20 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
+    async redirect({ url, baseUrl }: { url: string; baseUrl: string }) {
+      // Always allow relative URLs
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      // Allow same-origin URLs
+      try {
+        const urlObj = new URL(url);
+        const baseObj = new URL(baseUrl);
+        if (urlObj.origin === baseObj.origin) return url;
+      } catch {
+        // invalid URL, fall through
+      }
+      // Default: go to dashboard
+      return `${baseUrl}/dashboard`;
+    },
     async jwt({ token, user, trigger, session }: {
       token: JWT;
       user?: User;
@@ -68,7 +82,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.role = user.role || "USER";
-        token.currency = user.currency || "USD";
+        token.currency = user.currency || "BDT";
       }
 
       // Handle updates (e.g. if currency is changed in settings)

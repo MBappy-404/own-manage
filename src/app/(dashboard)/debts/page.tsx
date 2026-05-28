@@ -2,6 +2,9 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/api-helpers";
 import { DebtsClient } from "./debts-client";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function DebtsPage() {
   const { user } = await requireUser();
   if (!user) return null;
@@ -25,6 +28,7 @@ export default async function DebtsPage() {
     status: d.status as "PENDING" | "PAID",
     dueDate: d.dueDate ? d.dueDate.toISOString() : null,
     notes: d.notes,
+    phone: d.phone,
     financeAccountId: d.financeAccountId,
   }));
 

@@ -2,6 +2,9 @@ import { LeaderboardClient } from "./leaderboard-client";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export const metadata = { title: "Leaderboard" };
 
 export default async function LeaderboardPage() {
@@ -21,7 +24,7 @@ export default async function LeaderboardPage() {
 
   return (
     <LeaderboardClient 
-      currency={session.user.currency || "USD"} 
+      currency={session.user.currency || "BDT"} 
       isAdmin={isAdmin}
     />
   );

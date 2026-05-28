@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { financeAccountSchema } from "@/lib/validations";
 import { fail, ok, requireUser } from "@/lib/api-helpers";
@@ -24,6 +25,7 @@ export async function PUT(
     data: parsed.data,
   });
 
+  revalidatePath("/", "layout");
   return ok({ account });
 }
 
@@ -40,5 +42,8 @@ export async function DELETE(
   if (!existing) return fail("Not found", 404);
 
   await prisma.financeAccount.delete({ where: { id: params.id } });
+
+  revalidatePath("/", "layout");
   return ok({ ok: true });
 }
+

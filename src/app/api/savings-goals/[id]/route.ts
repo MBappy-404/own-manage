@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { savingsGoalSchema } from "@/lib/validations";
 import { fail, ok, requireUser } from "@/lib/api-helpers";
@@ -35,6 +36,8 @@ export async function PUT(
       }),
     },
   });
+
+  revalidatePath("/", "layout");
   return ok({ goal });
 }
 
@@ -51,5 +54,8 @@ export async function DELETE(
   if (!existing) return fail("Not found", 404);
 
   await prisma.savingsGoal.delete({ where: { id: params.id } });
+
+  revalidatePath("/", "layout");
   return ok({ ok: true });
 }
+

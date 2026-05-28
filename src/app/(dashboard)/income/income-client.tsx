@@ -66,6 +66,10 @@ export function IncomeClient({
     router.refresh();
   }
 
+  React.useEffect(() => {
+    router.refresh();
+  }, [router]);
+
   function handleDelete(id: string) {
     setDeletingId(id);
     setConfirmOpen(true);

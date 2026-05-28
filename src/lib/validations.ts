@@ -73,6 +73,7 @@ export const debtSchema = z.object({
   dueDate: z.coerce.date().optional().nullable(),
   status: z.enum(["PENDING", "PAID"]).default("PENDING"),
   notes: z.string().max(500).optional().or(z.literal("")),
+  phone: z.string().max(30).optional().nullable().or(z.literal("")),
   financeAccountId: z.string().optional().nullable(),
 });
 

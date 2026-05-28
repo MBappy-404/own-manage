@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { periodInterval, sumAmount, filterByInterval } from "@/lib/analytics";
 import { ok, fail, requireUser } from "@/lib/api-helpers";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: NextRequest) {
   const { error, user } = await requireUser();
   if (error) return error;

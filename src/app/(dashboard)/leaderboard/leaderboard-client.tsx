@@ -2,18 +2,18 @@
 
 import * as React from "react";
 import { motion } from "framer-motion";
-import { 
-  Crown, 
-  Medal, 
-  Trophy, 
-  Pencil, 
-  Trash2, 
-  Loader2, 
-  MessageSquare, 
-  Send, 
-  Star, 
-  Bell, 
-  Smartphone, 
+import {
+  Crown,
+  Medal,
+  Trophy,
+  Pencil,
+  Trash2,
+  Loader2,
+  MessageSquare,
+  Send,
+  Star,
+  Bell,
+  Smartphone,
   Trash,
   Sparkles,
   ShieldCheck,
@@ -92,7 +92,7 @@ export function LeaderboardClient({
 }) {
   const { t, locale } = useI18n();
   const [activeHubTab, setActiveHubTab] = React.useState<string>("ranks");
-  
+
   // Leaderboard State
   const [period, setPeriod] = React.useState<"week" | "month" | "all">("month");
   const [sort, setSort] = React.useState<"savings" | "income" | "expense">("savings");
@@ -113,6 +113,11 @@ export function LeaderboardClient({
   const [broadcastMessage, setBroadcastMessage] = React.useState("");
   const [broadcastType, setBroadcastType] = React.useState<string>("INFO");
   const [sendingBroadcast, setSendingBroadcast] = React.useState(false);
+  const [editingBroadcast, setEditingBroadcast] = React.useState<BroadcastItem | null>(null);
+  const [editingBroadcastTitle, setEditingBroadcastTitle] = React.useState("");
+  const [editingBroadcastMessage, setEditingBroadcastMessage] = React.useState("");
+  const [editingBroadcastType, setEditingBroadcastType] = React.useState<string>("INFO");
+  const [updatingBroadcast, setUpdatingBroadcast] = React.useState(false);
 
   // Fetch Leaderboard
   const refreshData = React.useCallback(() => {
@@ -243,15 +248,15 @@ export function LeaderboardClient({
       <Tabs value={activeHubTab} onValueChange={setActiveHubTab} className="space-y-6">
         <TabsList className="bg-muted/80 p-1 rounded-2xl grid grid-cols-3 max-w-lg border">
           <TabsTrigger value="ranks" className="rounded-xl font-bold py-2 text-xs sm:text-sm">
-            <Trophy className="w-4 h-4 mr-1.5 shrink-0" />
+            <Trophy className="w-4 h-4 mr-1.5 shrink-0 hidden sm:inline-block" />
             {locale === "bn" ? "মেম্বার র‍্যাঙ্ক" : "Ranks & Users"}
           </TabsTrigger>
           <TabsTrigger value="feedback" className="rounded-xl font-bold py-2 text-xs sm:text-sm">
-            <MessageSquare className="w-4 h-4 mr-1.5 shrink-0" />
+            <MessageSquare className="w-4 h-4 mr-1.5 shrink-0 hidden sm:inline-block" />
             {locale === "bn" ? "ব্যবহারকারী মতামত" : "Feedbacks"}
           </TabsTrigger>
           <TabsTrigger value="broadcast" className="rounded-xl font-bold py-2 text-xs sm:text-sm">
-            <Bell className="w-4 h-4 mr-1.5 shrink-0" />
+            <Bell className="w-4 h-4 mr-1.5 shrink-0 hidden sm:inline-block" />
             {locale === "bn" ? "ব্রডকাস্ট সেন্টার" : "Broadcasts"}
           </TabsTrigger>
         </TabsList>
@@ -326,7 +331,7 @@ export function LeaderboardClient({
                           )}
                         </p>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          {row.email} · {t("leaderboard.income")}{" "}
+                          {t("leaderboard.income")}{" "}
                           <span className="font-medium text-foreground">
                             <CurrencyValue value={row.income} currency={currency} />
                           </span>{" "}
@@ -336,34 +341,36 @@ export function LeaderboardClient({
                           </span>
                         </p>
                       </div>
-                      <p
-                        className={cn(
-                          "text-sm font-bold tabular-nums",
-                          row.savings >= 0 ? "text-success" : "text-destructive",
+                      <div className="flex items-center gap-3 shrink-0">
+                        <p
+                          className={cn(
+                            "text-xs sm:text-sm font-bold tabular-nums",
+                            row.savings >= 0 ? "text-success" : "text-destructive",
+                          )}
+                        >
+                          <CurrencyValue value={row.savings} currency={currency} />
+                        </p>
+                        {isAdmin && !row.isCurrentUser && (
+                          <div className="flex items-center gap-0.5 border bg-background/50 rounded-xl p-0.5 shadow-sm">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-muted-foreground hover:text-primary rounded-lg"
+                              onClick={() => setEditingUser(row)}
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-muted-foreground hover:text-destructive rounded-lg"
+                              onClick={() => setDeletingId(row.id)}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
                         )}
-                      >
-                        <CurrencyValue value={row.savings} currency={currency} />
-                      </p>
-                      {isAdmin && !row.isCurrentUser && (
-                        <div className="flex items-center gap-1 ml-4 shrink-0">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-primary rounded-xl"
-                            onClick={() => setEditingUser(row)}
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive rounded-xl"
-                            onClick={() => setDeletingId(row.id)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      )}
+                      </div>
                     </li>
                   ))}
                 </ul>
@@ -392,15 +399,15 @@ export function LeaderboardClient({
               {feedbacks.map((fb) => (
                 <Card key={fb.id} className="border border-border/50 bg-card/60 backdrop-blur-xl shadow-md relative overflow-hidden group hover:border-primary/20 transition-all">
                   <CardHeader className="pb-2 flex flex-row items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="w-10 h-10 border">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <Avatar className="w-10 h-10 border shrink-0">
                         <AvatarFallback className="font-bold bg-primary/10 text-primary">
                           {getInitials(fb.name)}
                         </AvatarFallback>
                       </Avatar>
-                      <div>
-                        <CardTitle className="text-sm font-bold">{fb.name}</CardTitle>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">{fb.email}</p>
+                      <div className="min-w-0 flex-1">
+                        <CardTitle className="text-sm font-bold truncate max-w-[130px] sm:max-w-[200px]">{fb.name}</CardTitle>
+                        <p className="text-[10px] text-muted-foreground mt-0.5 truncate max-w-[130px] sm:max-w-[200px]">{fb.email}</p>
                       </div>
                     </div>
                     {/* STARS */}
@@ -451,7 +458,7 @@ export function LeaderboardClient({
                     {locale === "bn" ? "নতুন নোটিফিকেশন ব্রডকাস্ট" : "Notification Composer"}
                   </CardTitle>
                   <CardDescription>
-                    {locale === "bn" 
+                    {locale === "bn"
                       ? "যেকোনো টাইটেল, বিবরণ ও অ্যালার্ট ক্যাটেগরি লিখে সবার কাছে মুহূর্তের মধ্যে পুশ নোটিফিকেশন পাঠান।"
                       : "Broadcast a push alert to all registered users instantly."}
                   </CardDescription>
@@ -490,7 +497,7 @@ export function LeaderboardClient({
                       <Label className="font-bold text-xs uppercase text-muted-foreground">
                         {locale === "bn" ? "অ্যালার্ট ক্যাটেগরি (Severity)" : "Alert Category"}
                       </Label>
-                      <div className="grid grid-cols-4 gap-2">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                         {["INFO", "SUCCESS", "WARNING", "ALERT"].map((type) => {
                           const config = getNotifClass(type);
                           const isSelected = broadcastType === type;
@@ -501,8 +508,8 @@ export function LeaderboardClient({
                               onClick={() => setBroadcastType(type)}
                               className={cn(
                                 "py-2 px-1 rounded-xl text-[10px] sm:text-xs font-bold border transition-all flex flex-col items-center justify-center gap-1.5",
-                                isSelected 
-                                  ? `${config.bg} ring-2 ring-primary scale-[1.03] shadow-sm` 
+                                isSelected
+                                  ? `${config.bg} ring-2 ring-primary scale-[1.03] shadow-sm`
                                   : "border-border/60 bg-background/30 text-muted-foreground hover:bg-muted/40"
                               )}
                             >
@@ -576,29 +583,47 @@ export function LeaderboardClient({
                               <p className="text-muted-foreground font-normal text-xs leading-relaxed">{br.message}</p>
                             </div>
 
-                            {/* DELETE BROADCAST HISTORY ITEM */}
-                            <button
-                              type="button"
-                              onClick={async (e) => {
-                                e.stopPropagation();
-                                if (!confirm(locale === "bn" ? "এই ব্রডকাস্টটি ইতিহাস থেকে মুছে ফেলতে চান?" : "Are you sure you want to delete this broadcast?")) return;
-                                try {
-                                  const res = await fetch(`/api/admin/broadcast?id=${br.id}`, { method: "DELETE" });
-                                  if (res.ok) {
-                                    toast.success(locale === "bn" ? "ব্রডকাস্ট মুছে ফেলা হয়েছে" : "Broadcast deleted");
-                                    fetchBroadcasts();
-                                  } else {
-                                    throw new Error("Failed");
+                            {/* ACTION BUTTONS (EDIT / DELETE) */}
+                            <div className="absolute right-3 top-4 flex items-center gap-1 opacity-0 group-hover/history:opacity-100 transition-opacity">
+                              {/* EDIT BUTTON */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingBroadcast(br);
+                                  setEditingBroadcastTitle(br.title);
+                                  setEditingBroadcastMessage(br.message);
+                                  setEditingBroadcastType(br.type);
+                                }}
+                                className="p-1 rounded hover:bg-primary/10 text-muted-foreground/40 hover:text-primary transition-colors"
+                                aria-label="Edit Broadcast"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+
+                              {/* DELETE BUTTON */}
+                              <button
+                                type="button"
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  if (!confirm(locale === "bn" ? "এই ব্রডকাস্টটি ইতিহাস থেকে মুছে ফেলতে চান?" : "Are you sure you want to delete this broadcast?")) return;
+                                  try {
+                                    const res = await fetch(`/api/admin/broadcast?id=${br.id}`, { method: "DELETE" });
+                                    if (res.ok) {
+                                      toast.success(locale === "bn" ? "ব্রডকাস্ট মুছে ফেলা হয়েছে" : "Broadcast deleted");
+                                      fetchBroadcasts();
+                                    } else {
+                                      throw new Error("Failed");
+                                    }
+                                  } catch {
+                                    toast.error("Failed to delete broadcast");
                                   }
-                                } catch {
-                                  toast.error("Failed to delete broadcast");
-                                }
-                              }}
-                              className="absolute right-3 top-4 p-1 rounded hover:bg-destructive/10 text-muted-foreground/40 hover:text-destructive opacity-0 group-hover/history:opacity-100 transition-opacity"
-                              aria-label="Delete Broadcast"
-                            >
-                              <Trash className="w-3.5 h-3.5" />
-                            </button>
+                                }}
+                                className="p-1 rounded hover:bg-destructive/10 text-muted-foreground/40 hover:text-destructive transition-colors"
+                                aria-label="Delete Broadcast"
+                              >
+                                <Trash className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           </div>
                         );
                       })}
@@ -620,7 +645,7 @@ export function LeaderboardClient({
                 <CardContent className="flex justify-center p-0">
                   {/* Phone frame container */}
                   <div className="w-[270px] h-[520px] rounded-[40px] border-[8px] border-zinc-800 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-zinc-900 via-neutral-950 to-neutral-900 shadow-2xl relative overflow-hidden flex flex-col items-center">
-                    
+
                     {/* Notch */}
                     <div className="absolute top-2 w-28 h-4 rounded-full bg-black z-30 flex items-center justify-between px-4 text-[7px] text-white/70">
                       <span className="font-semibold">9:41</span>
@@ -629,7 +654,7 @@ export function LeaderboardClient({
 
                     {/* Lock Screen Wallpaper */}
                     <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/35 via-zinc-950/90 to-purple-950/40 z-0" />
-                    
+
                     {/* Time & Date */}
                     <div className="relative z-10 text-center mt-12 space-y-0.5 text-white/80">
                       <p className="text-[10px] font-medium tracking-wide uppercase opacity-70">
@@ -644,7 +669,7 @@ export function LeaderboardClient({
 
                     {/* LIVE SMARTPHONE NOTIFICATION PREVIEW CONTAINER */}
                     <div className="relative z-10 w-full px-3 mt-12 flex-1 flex flex-col justify-start">
-                      
+
                       {/* Interactive Widget box */}
                       <div className="p-3 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/15 text-white shadow-lg space-y-1.5 animate-in zoom-in-95 duration-300">
                         <div className="flex items-center justify-between">
@@ -795,6 +820,116 @@ export function LeaderboardClient({
             >
               {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {t("common.delete")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Broadcast Dialog */}
+      <Dialog open={!!editingBroadcast} onOpenChange={(open) => !open && setEditingBroadcast(null)}>
+        <DialogContent className="rounded-2xl border bg-card/95 backdrop-blur-xl max-w-sm">
+          <DialogHeader>
+            <DialogTitle>
+              {locale === "bn" ? "ব্রডকাস্ট নোটিফিকেশন সংশোধন করুন" : "Edit Broadcast Alert"}
+            </DialogTitle>
+            <DialogDescription>
+              {locale === "bn"
+                ? "ব্রডকাস্ট নোটিফিকেশনের শিরোনাম এবং বার্তা আপডেট করুন। এটি সব ব্যবহারকারীর নোটিফিকেশন আপডেট করবে।"
+                : "Modify the title and description for this broadcast alert. This updates it for all users."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-3">
+            <div className="space-y-2">
+              <Label htmlFor="edit-broadcast-title">
+                {locale === "bn" ? "শিরোনাম" : "Title"}
+              </Label>
+              <Input
+                id="edit-broadcast-title"
+                value={editingBroadcastTitle}
+                onChange={(e) => setEditingBroadcastTitle(e.target.value)}
+                placeholder={locale === "bn" ? "শিরোনাম লিখুন" : "Notification title"}
+                className="rounded-xl border-border/60 bg-background/40"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-broadcast-message">
+                {locale === "bn" ? "বার্তা" : "Message"}
+              </Label>
+              <Textarea
+                id="edit-broadcast-message"
+                value={editingBroadcastMessage}
+                onChange={(e) => setEditingBroadcastMessage(e.target.value)}
+                placeholder={locale === "bn" ? "বার্তা লিখুন..." : "Notification body content..."}
+                className="rounded-xl border-border/60 bg-background/40 min-h-[90px] resize-none"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="font-bold text-xs uppercase text-muted-foreground">
+                {locale === "bn" ? "ধরণ (Severity Level)" : "Severity Level"}
+              </Label>
+              <div className="grid grid-cols-2 gap-1.5">
+                {[
+                  { type: "INFO", label: locale === "bn" ? "সাধারণ (INFO)" : "Info", color: "text-blue-500 border-blue-500/25 bg-blue-500/5", activeColor: "bg-blue-500 text-white border-blue-500" },
+                  { type: "WARNING", label: locale === "bn" ? "সতর্কতা (WARNING)" : "Warning", color: "text-amber-500 border-amber-500/25 bg-amber-500/5", activeColor: "bg-amber-500 text-white border-amber-500" },
+                  { type: "SUCCESS", label: locale === "bn" ? "সফলতা (SUCCESS)" : "Success", color: "text-emerald-500 border-emerald-500/25 bg-emerald-500/5", activeColor: "bg-emerald-500 text-white border-emerald-500" },
+                  { type: "ALERT", label: locale === "bn" ? "জরুরি (ALERT)" : "Alert", color: "text-rose-500 border-rose-500/25 bg-rose-500/5", activeColor: "bg-rose-500 text-white border-rose-500" },
+                ].map(({ type, label, color, activeColor }) => {
+                  const isSelected = editingBroadcastType === type;
+                  return (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setEditingBroadcastType(type)}
+                      className={cn(
+                        "py-1.5 px-2 rounded-xl text-[11px] font-bold border transition-all text-center",
+                        isSelected ? activeColor : cn("hover:bg-accent/40", color)
+                      )}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setEditingBroadcast(null)} className="rounded-xl">
+              {locale === "bn" ? "বাতিল" : "Cancel"}
+            </Button>
+            <Button
+              disabled={updatingBroadcast}
+              onClick={async () => {
+                if (!editingBroadcast) return;
+                if (!editingBroadcastTitle.trim() || !editingBroadcastMessage.trim()) {
+                  toast.error(locale === "bn" ? "শিরোনাম এবং বার্তা আবশ্যক!" : "Title and Message are required!");
+                  return;
+                }
+                setUpdatingBroadcast(true);
+                try {
+                  const res = await fetch("/api/admin/broadcast", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      id: editingBroadcast.id,
+                      title: editingBroadcastTitle,
+                      message: editingBroadcastMessage,
+                      type: editingBroadcastType,
+                    }),
+                  });
+                  if (!res.ok) throw new Error("Failed to update");
+                  toast.success(locale === "bn" ? "ব্রডকাস্ট নোটিফিকেশন সফলভাবে আপডেট করা হয়েছে!" : "Broadcast notification updated successfully!");
+                  setEditingBroadcast(null);
+                  fetchBroadcasts();
+                } catch {
+                  toast.error(locale === "bn" ? "ব্রডকাস্ট আপডেট করতে ব্যর্থ হয়েছে" : "Failed to update broadcast");
+                } finally {
+                  setUpdatingBroadcast(false);
+                }
+              }}
+              className="rounded-xl"
+            >
+              {updatingBroadcast && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {locale === "bn" ? "পরিবর্তন সংরক্ষণ করুন" : "Save Changes"}
             </Button>
           </DialogFooter>
         </DialogContent>

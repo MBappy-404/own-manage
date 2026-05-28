@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { incomeSchema } from "@/lib/validations";
 import { fail, ok, requireUser } from "@/lib/api-helpers";
@@ -54,6 +55,7 @@ export async function PUT(
     return updated;
   });
 
+  revalidatePath("/", "layout");
   return ok({ income });
 }
 
@@ -79,5 +81,7 @@ export async function DELETE(
     await tx.income.delete({ where: { id: params.id } });
   });
 
+  revalidatePath("/", "layout");
   return ok({ ok: true });
 }
+

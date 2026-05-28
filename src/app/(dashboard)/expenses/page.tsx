@@ -3,6 +3,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { ExpensesClient } from "./expenses-client";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export const metadata = { title: "Expenses" };
 
 export default async function ExpensesPage() {
@@ -22,7 +25,7 @@ export default async function ExpensesPage() {
   return (
     <ExpensesClient
       initial={serialized}
-      currency={session.user.currency || "USD"}
+      currency={session.user.currency || "BDT"}
     />
   );
 }

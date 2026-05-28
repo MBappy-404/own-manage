@@ -1,5 +1,5 @@
 /* OwnManage PWA service worker — static assets only; API/data always fresh */
-const VERSION = "v2";
+const VERSION = "v3";
 const STATIC_CACHE = `ownmanage-static-${VERSION}`;
 
 const PRECACHE_URLS = [
@@ -29,6 +29,11 @@ self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
+  // Only handle HTTP and HTTPS requests (ignores chrome-extension, data urls, etc.)
+  if (url.protocol !== "http:" && url.protocol !== "https:") {
+    return;
+  }
+
   // API & Next.js payloads: never cache — always network
   if (
     url.pathname.startsWith("/api") ||
@@ -53,7 +58,9 @@ self.addEventListener("fetch", (event) => {
       return fetch(request).then((res) => {
         if (res && res.status === 200) {
           const copy = res.clone();
-          caches.open(STATIC_CACHE).then((c) => c.put(request, copy));
+          caches.open(STATIC_CACHE)
+            .then((c) => c.put(request, copy))
+            .catch((err) => console.warn("PWA Cache PUT failed:", err));
         }
         return res;
       });

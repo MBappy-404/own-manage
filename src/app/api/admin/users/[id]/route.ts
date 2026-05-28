@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { ok, fail, requireUser } from "@/lib/api-helpers";
 
@@ -21,6 +22,8 @@ export async function PATCH(
       where: { id: params.id },
       data: { name, email, image },
     });
+
+    revalidatePath("/", "layout");
     return ok(updated);
   } catch (err) {
     console.error(err);
@@ -47,9 +50,12 @@ export async function DELETE(
     await prisma.user.delete({
       where: { id: params.id },
     });
+
+    revalidatePath("/", "layout");
     return ok({ success: true });
   } catch (err) {
     console.error(err);
     return fail("Failed to delete user", 500);
   }
 }
+

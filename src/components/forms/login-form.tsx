@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,7 +17,6 @@ import { GoogleIcon } from "@/components/icons/google-icon";
 import { useI18n } from "@/lib/i18n/provider";
 
 export function LoginForm() {
-  const router = useRouter();
   const params = useSearchParams();
   const { t } = useI18n();
   const callbackUrl = params.get("callbackUrl") ?? "/dashboard";
@@ -44,8 +43,8 @@ export function LoginForm() {
       return;
     }
     toast.success(t("auth.welcome"));
-    router.push(callbackUrl);
-    router.refresh();
+    // Use window.location for reliable post-auth navigation in production
+    window.location.href = callbackUrl;
   }
 
   return (
