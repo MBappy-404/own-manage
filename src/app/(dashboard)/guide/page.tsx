@@ -16,8 +16,6 @@ import { getServerT } from "@/lib/i18n/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
 
 export const metadata = { title: "User Guide" };
 

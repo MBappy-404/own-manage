@@ -115,7 +115,7 @@ export const translations: Record<Locale, Dictionary> = {
     "landing.chips.ai": "AI insights",
     "landing.chips.leaderboard": "Leaderboard",
     "landing.chips.secure": "Secure auth",
-    "landing.footer": "Built with Next.js, Prisma & MongoDB.",
+    "landing.footer": "Developed by AmeMax IT.",
 
     "auth.welcomeBack": "Welcome back",
     "auth.welcomeBackSubtitle": "Sign in to continue tracking your finances.",
@@ -552,7 +552,7 @@ export const translations: Record<Locale, Dictionary> = {
     "landing.heroTitle1": "টাকা ম্যানেজ করুন",
     "landing.heroTitle2": "পুরোদস্তুর স্মার্টলি।",
     "landing.heroSubtitle":
-      "OwnManage একটি আধুনিক ও দৃষ্টিনন্দন অ্যাপ যা আপনার প্রতিটি টাকা ট্র্যাক করে এবং AI-এর মাধ্যমে সঠিক আর্থিক সিদ্ধান্ত নিতে সাহায্য করে। এটি অফলাইনেও ব্যবহার করা সম্ভব।",
+      "OwnManage একটি আধুনিক ও দৃষ্টিনন্দন অ্যাপ যা আপনার প্রতিটি টাকা ট্র্যাক করে এবং AI-এর মাধ্যমে সঠিক আর্থিক সিদ্ধান্ত নিতে সাহায্য করে।",
     "landing.ctaCreate": "ফ্রি অ্যাকাউন্ট খুলুন",
     "landing.feature.track.title": "নিখুঁত ট্র্যাকিং",
     "landing.feature.track.desc":
@@ -576,7 +576,7 @@ export const translations: Record<Locale, Dictionary> = {
     "landing.chips.ai": "AI পরামর্শ",
     "landing.chips.leaderboard": "লিডারবোর্ড",
     "landing.chips.secure": "নিরাপদ লগইন",
-    "landing.footer": "Next.js ও MongoDB-এর ওপর ভিত্তি করে তৈরি।",
+    "landing.footer": "AmeMax IT দ্বারা তৈরি।",
 
     "auth.welcomeBack": "স্বাগতম",
     "auth.welcomeBackSubtitle": "আপনার আর্থিক হিসাব দেখতে লগইন করুন।",

@@ -2,8 +2,6 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/api-helpers";
 import { DebtsClient } from "./debts-client";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
 
 export default async function DebtsPage() {
   const { user } = await requireUser();

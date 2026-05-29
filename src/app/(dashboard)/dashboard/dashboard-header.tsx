@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { Plus, Eye, EyeOff } from "lucide-react";
-import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { IncomeFormDialog } from "@/components/forms/income-form";
@@ -18,10 +17,10 @@ export function DashboardHeader({ incomeLabel, expenseLabel }: Props) {
   const [incomeOpen, setIncomeOpen] = React.useState(false);
   const [expenseOpen, setExpenseOpen] = React.useState(false);
   const { isVisible, toggleVisibility } = useBalanceVisibility();
-  const router = useRouter();
 
   const handleSaved = () => {
-    router.refresh();
+    // Dashboard page is a server component — reload to show fresh data
+    window.location.reload();
   };
 
   return (

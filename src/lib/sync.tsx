@@ -73,8 +73,26 @@ export async function smartFetch(url: string, options: RequestInit = {}) {
     });
     return { ok: true, status: 200, json: async () => ({ offline: true }) } as Response;
   }
-  return fetch(url, {
+
+  // Cache-bust GET requests so browser / SW never returns stale data
+  let fetchUrl = url;
+  const method = (options.method ?? "GET").toUpperCase();
+  if (method === "GET") {
+    const separator = url.includes("?") ? "&" : "?";
+    fetchUrl = `${url}${separator}_t=${Date.now()}`;
+  }
+
+  const headers = new Headers(options.headers);
+  if (!headers.has("Cache-Control")) {
+    headers.set("Cache-Control", "no-cache, no-store, must-revalidate");
+  }
+  if (!headers.has("Pragma")) {
+    headers.set("Pragma", "no-cache");
+  }
+
+  return fetch(fetchUrl, {
     ...options,
-    cache: options.cache ?? "no-store",
+    headers,
+    cache: "no-store",
   });
 }

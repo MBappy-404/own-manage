@@ -26,7 +26,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { financeAccountSchema, type FinanceAccountInput } from "@/lib/validations";
-import { useRouter } from "next/navigation";
 import { smartFetch } from "@/lib/sync";
 import { useI18n } from "@/lib/i18n/provider";
 import { useSyncedState } from "@/hooks/use-synced-state";
@@ -49,7 +48,6 @@ export function AccountsClient({
   currency: string;
 }) {
   const { t } = useI18n();
-  const router = useRouter();
   const [items, setItems] = useSyncedState<Account[]>(initial);
   const [open, setOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<Account | null>(null);
@@ -59,14 +57,16 @@ export function AccountsClient({
 
   async function refresh() {
     const res = await smartFetch("/api/finance-accounts", { method: "GET" });
+    if (!res.ok) return;
     const data = await res.json();
-    setItems(data.accounts);
-    router.refresh();
+    if (data.accounts) setItems(data.accounts);
   }
 
+  // Always fetch fresh data on mount (bypasses any RSC cache)
   React.useEffect(() => {
-    router.refresh();
-  }, [router]);
+    refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function handleDelete(id: string) {
     setDeletingId(id);

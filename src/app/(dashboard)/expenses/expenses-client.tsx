@@ -41,7 +41,6 @@ import {
   sumAmount,
 } from "@/lib/analytics";
 import { ExpenseTrendChart } from "./expense-trend-chart";
-import { useRouter } from "next/navigation";
 import { smartFetch } from "@/lib/sync";
 import { useI18n } from "@/lib/i18n/provider";
 import { useSyncedState } from "@/hooks/use-synced-state";
@@ -66,7 +65,6 @@ export function ExpensesClient({
   currency: string;
 }) {
   const { t } = useI18n();
-  const router = useRouter();
   const [items, setItems] = useSyncedState<Expense[]>(initial);
   const [open, setOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<Expense | null>(null);
@@ -80,14 +78,16 @@ export function ExpensesClient({
 
   async function refresh() {
     const res = await smartFetch("/api/expense", { method: "GET" });
+    if (!res.ok) return;
     const data = await res.json();
-    setItems(data.expenses);
-    router.refresh();
+    if (data.expenses) setItems(data.expenses);
   }
 
+  // Always fetch fresh data on mount (bypasses any RSC cache)
   React.useEffect(() => {
-    router.refresh();
-  }, [router]);
+    refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function handleDelete(id: string) {
     setDeletingId(id);
@@ -105,7 +105,6 @@ export function ExpensesClient({
       }
       toast.success(t("expense.deleted"));
       setItems((prev) => prev.filter((i) => i.id !== deletingId));
-      router.refresh();
       setConfirmOpen(false);
     } finally {
       setIsDeleting(false);

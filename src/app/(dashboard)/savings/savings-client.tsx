@@ -23,7 +23,6 @@ import {
 } from "@/components/ui/dialog";
 import { savingsGoalSchema, type SavingsGoalInput } from "@/lib/validations";
 import { formatDate } from "@/lib/utils";
-import { useRouter } from "next/navigation";
 import { smartFetch } from "@/lib/sync";
 import { useI18n } from "@/lib/i18n/provider";
 import { useSyncedState } from "@/hooks/use-synced-state";
@@ -47,7 +46,6 @@ export function SavingsClient({
   currency: string;
 }) {
   const { t } = useI18n();
-  const router = useRouter();
   const [items, setItems] = useSyncedState<Goal[]>(initial);
   const [open, setOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<Goal | null>(null);
@@ -57,14 +55,16 @@ export function SavingsClient({
 
   async function refresh() {
     const res = await smartFetch("/api/savings-goals", { method: "GET" });
+    if (!res.ok) return;
     const data = await res.json();
-    setItems(data.goals);
-    router.refresh();
+    if (data.goals) setItems(data.goals);
   }
 
+  // Always fetch fresh data on mount (bypasses any RSC cache)
   React.useEffect(() => {
-    router.refresh();
-  }, [router]);
+    refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function handleDelete(id: string) {
     setDeletingId(id);

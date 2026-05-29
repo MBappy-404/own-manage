@@ -33,9 +33,6 @@ import { formatCurrency } from "@/lib/utils";
 import { AISummaryCard } from "@/components/dashboard/ai-summary-card";
 import { getDate, getDaysInMonth } from "date-fns";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-
 export const metadata = { title: "AI Insights" };
 
 export default async function InsightsPage() {

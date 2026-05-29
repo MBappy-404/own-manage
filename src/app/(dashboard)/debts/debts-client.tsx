@@ -27,7 +27,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { debtSchema, type DebtInput } from "@/lib/validations";
-import { useRouter } from "next/navigation";
 import { smartFetch } from "@/lib/sync";
 import { useI18n } from "@/lib/i18n/provider";
 import { useSyncedState } from "@/hooks/use-synced-state";
@@ -76,7 +75,6 @@ export function DebtsClient({
   currency: string;
 }) {
   const { t, locale } = useI18n();
-  const router = useRouter();
   const [items, setItems] = useSyncedState<Debt[]>(initial);
   const [open, setOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<Debt | null>(null);
@@ -86,14 +84,16 @@ export function DebtsClient({
 
   async function refresh() {
     const res = await smartFetch("/api/debts", { method: "GET" });
+    if (!res.ok) return;
     const data = await res.json();
-    setItems(data.debts);
-    router.refresh();
+    if (data.debts) setItems(data.debts);
   }
 
+  // Always fetch fresh data on mount (bypasses any RSC cache)
   React.useEffect(() => {
-    router.refresh();
-  }, [router]);
+    refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function handleDelete(id: string) {
     setDeletingId(id);
@@ -314,7 +314,12 @@ export function DebtsClient({
                                             ? `আসসালামু আলাইকুম ${debt.personName}, OwnManage অ্যাপের হিসাব অনুযায়ী আপনার কাছ থেকে নেওয়া আমার ${debt.amount} ${currency} দেনা পরিশোধের কথা মনে করিয়ে দিচ্ছি। খুব শীঘ্রই পরিশোধ করবো ইনশাআল্লাহ্‌।`
                                             : `Assalamu Alaikum ${debt.personName}, just a reminder from my OwnManage app regarding the debt of ${debt.amount} ${currency} that I took from you. I will pay you back very soon, In Sha Allah.`);
                                       
-                                      const cleanPhone = debt.phone!.replace(/[^\d+]/g, "");
+                                      let cleanPhone = debt.phone!.replace(/[^\d+]/g, "");
+                                      if (cleanPhone.startsWith("0") && cleanPhone.length === 11) {
+                                        cleanPhone = "88" + cleanPhone;
+                                      }
+                                      cleanPhone = cleanPhone.replace(/^\+/, "");
+                                      
                                       const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
                                       window.open(url, "_blank");
                                     }}

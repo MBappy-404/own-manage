@@ -25,7 +25,6 @@ import {
   periodInterval,
   filterByInterval,
 } from "@/lib/analytics";
-import { useRouter } from "next/navigation";
 import { smartFetch } from "@/lib/sync";
 import { useSyncedState } from "@/hooks/use-synced-state";
 import { IncomeTrendChart } from "./income-trend-chart";
@@ -50,7 +49,6 @@ export function IncomeClient({
   currency: string;
 }) {
   const { t } = useI18n();
-  const router = useRouter();
   const [items, setItems] = useSyncedState<IncomeItem[]>(initial);
   const [open, setOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<IncomeItem | null>(null);
@@ -61,14 +59,16 @@ export function IncomeClient({
 
   async function refresh() {
     const res = await smartFetch("/api/income", { method: "GET" });
+    if (!res.ok) return;
     const data = await res.json();
-    setItems(data.incomes);
-    router.refresh();
+    if (data.incomes) setItems(data.incomes);
   }
 
+  // Always fetch fresh data on mount (bypasses any RSC cache)
   React.useEffect(() => {
-    router.refresh();
-  }, [router]);
+    refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function handleDelete(id: string) {
     setDeletingId(id);
@@ -86,7 +86,6 @@ export function IncomeClient({
       }
       toast.success(t("income.deleted"));
       setItems((prev) => prev.filter((i) => i.id !== deletingId));
-      router.refresh();
       setConfirmOpen(false);
     } finally {
       setIsDeleting(false);

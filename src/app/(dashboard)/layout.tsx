@@ -5,8 +5,6 @@ import { authOptions } from "@/lib/auth";
 import { Sidebar } from "@/components/layout/sidebar";
 import { DashboardLayoutClient } from "@/components/layout/dashboard-layout-client";
 
-export const dynamic = "force-dynamic";
-export const fetchCache = "force-no-store";
 
 export default async function DashboardLayout({
   children,

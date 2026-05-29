@@ -3,9 +3,6 @@ import { requireUser } from "@/lib/api-helpers";
 import { AccountsClient } from "./accounts-client";
 
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-
 export default async function AccountsPage() {
   const { user } = await requireUser();
   if (!user) return null;

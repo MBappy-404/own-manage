@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { LanguageToggle } from "@/components/layout/language-toggle";
 import { ThemeToggleButton } from "@/components/layout/theme-toggle-button";
 import { getServerT } from "@/lib/i18n/server";
+import { PWAInstallButton } from "@/components/pwa-install-button";
 
 export default function Home() {
   const { t } = getServerT();
@@ -51,7 +52,7 @@ export default function Home() {
         <div className="flex items-center gap-2">
           <LanguageToggle />
           <ThemeToggleButton />
-          <Button asChild variant="ghost" size="sm">
+          <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
             <Link href="/login">{t("common.signIn")}</Link>
           </Button>
           <Button asChild size="sm" variant="premium">
@@ -68,24 +69,25 @@ export default function Home() {
           <Sparkles className="w-3.5 h-3.5 text-primary" />
           {t("landing.heroPre")}
         </div>
-        <h1 className="text-4xl md:text-7xl font-bold tracking-tight">
+        <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight">
           {t("landing.heroTitle1")}
-          <br />
+          <br className="hidden sm:block" />
           <span className="premium-text">{t("landing.heroTitle2")}</span>
         </h1>
         <p className="mt-6 text-base md:text-xl text-muted-foreground max-w-2xl mx-auto">
           {t("landing.heroSubtitle")}
         </p>
-        <div className="mt-10 flex flex-col sm:flex-row gap-3 justify-center">
-          <Button asChild size="lg" variant="premium">
+        <div className="mt-10 flex flex-col sm:flex-row gap-3 justify-center items-center w-full max-w-2xl mx-auto">
+          <Button asChild size="lg" variant="premium" className="w-full sm:w-auto">
             <Link href="/register">
               {t("landing.ctaCreate")}
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-4 h-4 ml-2" />
             </Link>
           </Button>
-          <Button asChild size="lg" variant="outline">
+          <Button asChild size="lg" variant="outline" className="w-full sm:w-auto">
             <Link href="/login">{t("common.signIn")}</Link>
           </Button>
+          <PWAInstallButton />
         </div>
         <div className="mt-16 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5"><LineChart className="w-4 h-4" /> {t("landing.chips.realtime")}</span>
@@ -95,7 +97,7 @@ export default function Home() {
       </section>
 
       <section className="container pb-24">
-        <div className="grid md:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {features.map((f) => (
             <Card key={f.title} className="glass-card hover:-translate-y-1 transition-transform">
               <CardContent className="p-6">
